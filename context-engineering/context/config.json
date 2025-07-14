@@ -1,0 +1,51 @@
+{
+  "project": {
+    "name": "Collective Memory System",
+    "version": "2.1.0",
+    "description": "AI-powered context management system with Context Engineering Template",
+    "repository": "https://github.com/alidurmus/collective-memory.git"
+  },
+  "architecture": {
+    "template": "Context Engineering Template",
+    "structure": ["commands", "context", "output", "prompts"],
+    "main_app": "collective-memory-app",
+    "demo_data": "data",
+    "documentation": "docs"
+  },
+  "development": {
+    "python_version": "3.9+",
+    "frameworks": ["Django", "React", "Context7"],
+    "testing": ["pytest", "playwright"],
+    "ai_tools": ["Cursor", "Context7"]
+  },
+  "languages": {
+    "ui_language": "Turkish",
+    "code_language": "English",
+    "memory_reference": "2176195"
+  },
+  "testing": {
+    "backend_framework": "pytest",
+    "ui_framework": "playwright",
+    "memory_reference": "592592",
+    "coverage_minimum": 80
+  },
+  "context7": {
+    "enabled": true,
+    "documentation_tools": true,
+    "memory_reference": "592593",
+    "ui_framework": "glassmorphism"
+  },
+  "ports": {
+    "frontend": 3003,
+    "backend": 8000,
+    "test_server": 3001
+  },
+  "paths": {
+    "main_app": "../collective-memory-app",
+    "frontend": "../collective-memory-app/frontend",
+    "backend": "../collective-memory-app/src",
+    "tests": "../collective-memory-app/tests",
+    "demo_data": "../data",
+    "docs": "../docs"
+  }
+} 
