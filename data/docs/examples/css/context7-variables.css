@@ -1,0 +1,40 @@
+/**
+ * Context7 ERP - CSS Custom Properties (Variables)
+ * @version v2.2.0-glassmorphism-enhanced
+ * @date 11 Ocak 2025
+ * @description CSS custom properties for consistent theming
+ */
+
+:root {
+    /* Layout Variables */
+    --content-padding: 2rem;
+    --card-border-radius: 16px;
+    --section-spacing: 2rem;
+    --sidebar-width: 25%;
+    --main-content-width: 75%;
+    
+    /* Glassmorphism Variables */
+    --glass-bg-light: rgba(255, 255, 255, 0.15);
+    --glass-bg-medium: rgba(255, 255, 255, 0.08);
+    --glass-bg-dark: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.3);
+    --glass-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+    --backdrop-blur: 20px;
+    --backdrop-blur-strong: 25px;
+    
+    /* Color System */
+    --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --success-color: #28a745;
+    --warning-color: #ffc107;
+    --danger-color: #dc3545;
+    --info-color: #17a2b8;
+    
+    /* Animation Variables */
+    --transition-base: all 0.3s ease;
+    --transition-spring: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    --hover-transform: translateY(-2px) scale(1.02);
+    
+    /* Typography Variables */
+    --font-weight-bold: 700;
+    --font-weight-black: 800;
+} 

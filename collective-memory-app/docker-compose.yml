@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  collective-memory:
+    build: .
+    image: collective-memory:latest
+    container_name: collective-memory-app
+    volumes:
+      # Çalışma dizinini mount et
+      - ./:/workspace
+      # Cursor data dizinlerini mount et (read-only)
+      - ~/.config/Cursor:/cursor-config:ro
+      - ~/Library/Application Support/Cursor:/cursor-data:ro
+      # Uygulama data dizinini mount et
+      - ~/.collective-memory:/app/data
+    working_dir: /workspace
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONPATH=/app/src
+    command: --help
+    
+  # Development service
+  collective-memory-dev:
+    build: .
+    image: collective-memory:latest
+    container_name: collective-memory-dev
+    volumes:
+      - ./:/workspace
+      - ~/.config/Cursor:/cursor-config:ro
+      - ~/Library/Application Support/Cursor:/cursor-data:ro
+      - ~/.collective-memory:/app/data
+      # Development mounts
+      - ./src:/app/src
+      - ./config:/app/config
+    working_dir: /workspace
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONPATH=/app/src
+      - DEBUG=1
+    command: --version
+    profiles:
+      - dev
+    
+  # Test service
+  collective-memory-test:
+    build: .
+    image: collective-memory:latest
+    container_name: collective-memory-test
+    volumes:
+      - ./:/workspace
+      - ./tests:/app/tests
+    working_dir: /workspace
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONPATH=/app/src
+      - TESTING=1
+    command: python -m pytest /app/tests -v
+    profiles:
+      - test 

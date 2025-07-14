@@ -1,0 +1,72 @@
+# =======================================================
+# POSTGRESQL PRODUCTION ENVIRONMENT VARIABLES
+# =======================================================
+# Copy this file to .env and update the values
+# File: .env.production
+
+# =======================================================
+# DATABASE CONFIGURATION - PostgreSQL
+# =======================================================
+DEBUG=False
+SECRET_KEY=your-production-secret-key-change-this-immediately-50-chars-minimum
+ALLOWED_HOSTS=localhost,127.0.0.1,your-domain.com
+
+# PostgreSQL Database Settings
+DB_ENGINE=django.db.backends.postgresql
+DB_NAME=erp_production
+DB_USER=erp_user
+DB_PASSWORD=your-strong-password-here-change-this
+DB_HOST=localhost
+DB_PORT=5432
+
+# Alternative Database URL format
+DATABASE_URL=postgresql://erp_user:your-password@localhost:5432/erp_production
+
+# =======================================================
+# REDIS CONFIGURATION (Optional - for caching)
+# =======================================================
+REDIS_URL=redis://localhost:6379/1
+
+# =======================================================
+# EMAIL CONFIGURATION (Optional)
+# =======================================================
+EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USE_TLS=True
+EMAIL_HOST_USER=your-email@company.com
+EMAIL_HOST_PASSWORD=your-app-password
+
+# =======================================================
+# SECURITY SETTINGS
+# =======================================================
+SECURE_SSL_REDIRECT=False
+SECURE_HSTS_SECONDS=31536000
+SESSION_COOKIE_SECURE=False
+CSRF_COOKIE_SECURE=False
+
+# =======================================================
+# DOMAIN CONFIGURATION
+# =======================================================
+DOMAIN_NAME=your-domain.com
+
+# =======================================================
+# BACKUP CONFIGURATION
+# =======================================================
+BACKUP_DIR=/var/backups/erp
+BACKUP_RETENTION_DAYS=7
+
+# =======================================================
+# MONITORING (Optional - Sentry)
+# =======================================================
+SENTRY_DSN=your-sentry-dsn-here
+ENABLE_SENTRY=False
+
+# =======================================================
+# INSTRUCTIONS:
+# =======================================================
+# 1. Copy this file: cp env_production_template.txt .env
+# 2. Update all passwords and secret keys
+# 3. Set appropriate domain names
+# 4. Test database connection before deployment
+# 5. Keep this file secure and never commit to git 

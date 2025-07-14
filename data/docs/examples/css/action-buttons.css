@@ -1,0 +1,109 @@
+/**
+ * Context7 ERP - Action Button System CSS
+ * @version v2.2.0-glassmorphism-enhanced
+ * @date 11 Ocak 2025
+ * @description CSS classes for action buttons
+ */
+
+.action-button {
+    background: var(--primary-gradient);
+    border: none;
+    border-radius: 12px;
+    padding: 0.75rem 1.5rem;
+    color: white;
+    font-weight: var(--font-weight-bold);
+    transition: var(--transition-spring);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.action-button:hover {
+    transform: var(--hover-transform);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    color: white;
+}
+
+.action-button:focus {
+    outline: 2px solid #667eea;
+    outline-offset: 2px;
+}
+
+.action-button:active {
+    transform: translateY(0) scale(0.98);
+}
+
+.action-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Button Variants */
+.action-button--secondary {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+}
+
+.action-button--success {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+}
+
+.action-button--warning {
+    background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+    color: #212529;
+}
+
+.action-button--danger {
+    background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%);
+}
+
+.action-button--info {
+    background: linear-gradient(135deg, #17a2b8 0%, #6f42c1 100%);
+}
+
+/* Button Sizes */
+.action-button--small {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+}
+
+.action-button--large {
+    padding: 1rem 2rem;
+    font-size: 1.125rem;
+}
+
+/* Button Groups */
+.action-button-group {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.action-button-group .action-button {
+    flex: 1;
+    min-width: 120px;
+}
+
+/* Floating Action Button */
+.fab {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--primary-gradient);
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    transition: var(--transition-spring);
+    z-index: 1000;
+}
+
+.fab:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+} 

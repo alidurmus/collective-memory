@@ -1,0 +1,476 @@
+<!--
+ * Context7 ERP - Sayfa Template Örnekleri
+ * Version: v2.2.0-glassmorphism-enhanced
+ * Source: docs/system/sayfa-tasarim-kurallari.md
+ * Purpose: HTML template patterns - büyük kod örnekleri
+-->
+
+<!-- =============================
+     1. LİSTE SAYFASI TEMPLATE
+     ============================= -->
+<div class="list-page-template">
+    <!-- Header Section -->
+    <div class="page-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="page-title">[Sayfa Başlığı]</h1>
+                <nav aria-label="breadcrumb" class="breadcrumb-modern">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item">
+                            <a href="{% url 'dashboard:dashboard' %}">
+                                <i class="fas fa-home"></i> Ana Sayfa
+                            </a>
+                        </li>
+                        <li class="breadcrumb-item active">[Sayfa Adı]</li>
+                    </ol>
+                </nav>
+            </div>
+            <div class="col-md-4 text-end">
+                <a href="[kategori-url]" class="btn btn-secondary me-2">
+                    <i class="fas fa-layer-group"></i> Kategoriler
+                </a>
+                <a href="[create-url]" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Yeni [Item]
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon primary">
+                <i class="fas fa-[icon]"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-title">Toplam [Item]</div>
+                <div class="stat-value">{{ total_count }}</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon success">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-title">Aktif</div>
+                <div class="stat-value">{{ active_count }}</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon warning">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-title">Beklemede</div>
+                <div class="stat-value">{{ pending_count }}</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon danger">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-title">Kritik</div>
+                <div class="stat-value">{{ critical_count }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="filter-card">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label for="search" class="form-label">Arama</label>
+                <input type="text" class="form-control" id="search" name="search" value="{{ request.GET.search }}">
+            </div>
+            <div class="col-md-3">
+                <label for="category" class="form-label">Kategori</label>
+                <select class="form-select" id="category" name="category">
+                    <option value="">Tümü</option>
+                    {% for category in categories %}
+                        <option value="{{ category.id }}" {% if request.GET.category == category.id|stringformat:"s" %}selected{% endif %}>
+                            {{ category.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="status" class="form-label">Durum</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="">Tümü</option>
+                    <option value="active" {% if request.GET.status == "active" %}selected{% endif %}>Aktif</option>
+                    <option value="inactive" {% if request.GET.status == "inactive" %}selected{% endif %}>Pasif</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary me-2">
+                    <i class="fas fa-search"></i> Filtrele
+                </button>
+                <a href="?" class="btn btn-outline-secondary">
+                    <i class="fas fa-times"></i> Temizle
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Data Table -->
+    <div class="data-table-card">
+        <div class="table-responsive">
+            <table class="table modern-table">
+                <thead>
+                    <tr>
+                        <th>Ad</th>
+                        <th>Kategori</th>
+                        <th>Durum</th>
+                        <th>Oluşturulma</th>
+                        <th class="text-end">İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar me-3">
+                                        <i class="fas fa-[icon]"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold">{{ item.name }}</div>
+                                        <div class="text-muted small">{{ item.code }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-primary">{{ item.category.name }}</span>
+                            </td>
+                            <td>
+                                {% if item.is_active %}
+                                    <span class="badge bg-success">Aktif</span>
+                                {% else %}
+                                    <span class="badge bg-warning">Pasif</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ item.created_at|date:"d M Y" }}</td>
+                            <td class="text-end">
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'erp:item_detail' item.pk %}" 
+                                       class="btn btn-info btn-sm" title="Detayları Görüntüle">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'erp:item_edit' item.pk %}" 
+                                       class="btn btn-warning btn-sm" title="Düzenle">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'erp:item_delete' item.pk %}" 
+                                       class="btn btn-danger btn-sm" 
+                                       onclick="return confirm('Silmek istediğinizden emin misiniz?')" 
+                                       title="Sil">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5">
+                                <div class="empty-state">
+                                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                                    <h5 class="text-muted">Henüz [item] bulunmuyor</h5>
+                                    <p class="text-muted">İlk [item]'ınızı oluşturmak için butona tıklayın</p>
+                                    <a href="[create-url]" class="btn btn-primary">
+                                        <i class="fas fa-plus"></i> Yeni [Item] Oluştur
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        {% if items.has_other_pages %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if items.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">İlk</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ items.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">Önceki</a>
+                        </li>
+                    {% endif %}
+                    
+                    <li class="page-item active">
+                        <span class="page-link">{{ items.number }} / {{ items.paginator.num_pages }}</span>
+                    </li>
+                    
+                    {% if items.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ items.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">Sonraki</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ items.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">Son</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    </div>
+</div>
+
+<!-- =============================
+     2. DETAY SAYFASI TEMPLATE
+     ============================= -->
+<div class="detail-page-template">
+    <!-- Header Section -->
+    <div class="detail-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <div class="d-flex align-items-center">
+                    <a href="{% url 'erp:items' %}" class="btn btn-outline-secondary me-3">
+                        <i class="fas fa-arrow-left"></i>
+                    </a>
+                    <div>
+                        <h1 class="detail-title">{{ object.name }}</h1>
+                        <div class="detail-meta">
+                            <span class="badge bg-success">{{ object.status }}</span>
+                            <span class="text-muted">Son güncelleme: {{ object.updated_at|date:"d M Y H:i" }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 text-end">
+                <a href="{% url 'erp:item_edit' object.pk %}" class="btn btn-warning me-2">
+                    <i class="fas fa-edit"></i> Düzenle
+                </a>
+                <a href="{% url 'erp:item_delete' object.pk %}" class="btn btn-danger"
+                   onclick="return confirm('Silmek istediğinizden emin misiniz?')">
+                    <i class="fas fa-trash"></i> Sil
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Primary Information Card -->
+            <div class="info-card primary">
+                <h3>Temel Bilgiler</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <label>Ad:</label>
+                        <value>{{ object.name }}</value>
+                    </div>
+                    <div class="info-item">
+                        <label>Kod:</label>
+                        <value>{{ object.code }}</value>
+                    </div>
+                    <div class="info-item">
+                        <label>Kategori:</label>
+                        <value>{{ object.category.name }}</value>
+                    </div>
+                    <div class="info-item">
+                        <label>Açıklama:</label>
+                        <value>{{ object.description|default:"Açıklama yok" }}</value>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Related Data Section -->
+            <div class="related-data-card">
+                <h3>İlişkili Veriler</h3>
+                <div class="table-responsive">
+                    <table class="table modern-table">
+                        <thead>
+                            <tr>
+                                <th>Tarih</th>
+                                <th>Tür</th>
+                                <th>Miktar</th>
+                                <th>Durum</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for related in object.related_items.all %}
+                                <tr>
+                                    <td>{{ related.date|date:"d M Y" }}</td>
+                                    <td>{{ related.type }}</td>
+                                    <td>{{ related.amount }}</td>
+                                    <td>
+                                        <span class="badge bg-info">{{ related.status }}</span>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted">
+                                        İlişkili veri bulunamadı
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <!-- Sidebar Information -->
+            <div class="sidebar-card">
+                <h4>Özet Bilgiler</h4>
+                <div class="summary-stats">
+                    <div class="summary-item">
+                        <i class="fas fa-calendar-alt text-primary"></i>
+                        <div>
+                            <small>Oluşturulma</small>
+                            <div>{{ object.created_at|date:"d M Y" }}</div>
+                        </div>
+                    </div>
+                    <div class="summary-item">
+                        <i class="fas fa-user text-success"></i>
+                        <div>
+                            <small>Oluşturan</small>
+                            <div>{{ object.created_by.get_full_name|default:object.created_by.username }}</div>
+                        </div>
+                    </div>
+                    <div class="summary-item">
+                        <i class="fas fa-edit text-warning"></i>
+                        <div>
+                            <small>Son Güncelleme</small>
+                            <div>{{ object.updated_at|date:"d M Y H:i" }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="actions-card">
+                <h4>Hızlı İşlemler</h4>
+                <div class="d-grid gap-2">
+                    <a href="{% url 'erp:item_duplicate' object.pk %}" class="btn btn-outline-primary">
+                        <i class="fas fa-copy"></i> Kopyala
+                    </a>
+                    <a href="{% url 'erp:item_export' object.pk %}" class="btn btn-outline-success">
+                        <i class="fas fa-download"></i> Excel'e Aktar
+                    </a>
+                    <a href="{% url 'erp:item_history' object.pk %}" class="btn btn-outline-info">
+                        <i class="fas fa-history"></i> Geçmiş
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- =============================
+     3. FORM SAYFASI TEMPLATE
+     ============================= -->
+<div class="form-page-template">
+    <!-- Header Section -->
+    <div class="form-header">
+        <div class="d-flex align-items-center mb-3">
+            <a href="{% url 'erp:items' %}" class="btn btn-outline-secondary me-3">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div>
+                <h1 class="form-title">{% if object %}{{ object.name }} - Düzenle{% else %}Yeni [Item] Oluştur{% endif %}</h1>
+                <nav aria-label="breadcrumb" class="breadcrumb-modern">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item">
+                            <a href="{% url 'dashboard:dashboard' %}">Ana Sayfa</a>
+                        </li>
+                        <li class="breadcrumb-item">
+                            <a href="{% url 'erp:items' %}">[Items]</a>
+                        </li>
+                        <li class="breadcrumb-item active">
+                            {% if object %}Düzenle{% else %}Yeni{% endif %}
+                        </li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form Section -->
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="form-card">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <!-- Basic Information Section -->
+                    <div class="form-section">
+                        <h4 class="section-title">Temel Bilgiler</h4>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="id_name" class="form-label">Ad *</label>
+                                <input type="text" class="form-control" id="id_name" name="name" 
+                                       value="{{ form.name.value|default:'' }}" required>
+                                {% if form.name.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.name.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="id_code" class="form-label">Kod</label>
+                                <input type="text" class="form-control" id="id_code" name="code" 
+                                       value="{{ form.code.value|default:'' }}">
+                                {% if form.code.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.code.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-12">
+                                <label for="id_description" class="form-label">Açıklama</label>
+                                <textarea class="form-control" id="id_description" name="description" 
+                                          rows="3">{{ form.description.value|default:'' }}</textarea>
+                                {% if form.description.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.description.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Category Section -->
+                    <div class="form-section">
+                        <h4 class="section-title">Kategori Bilgileri</h4>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="id_category" class="form-label">Kategori *</label>
+                                <select class="form-select" id="id_category" name="category" required>
+                                    <option value="">Kategori seçin</option>
+                                    {% for category in categories %}
+                                        <option value="{{ category.id }}" 
+                                                {% if form.category.value == category.id %}selected{% endif %}>
+                                            {{ category.name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                {% if form.category.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.category.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="id_status" class="form-label">Durum</label>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="id_is_active" 
+                                           name="is_active" {% if form.is_active.value %}checked{% endif %}>
+                                    <label class="form-check-label" for="id_is_active">Aktif</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary me-3">
+                            <i class="fas fa-save"></i> 
+                            {% if object %}Güncelle{% else %}Kaydet{% endif %}
+                        </button>
+                        <a href="{% url 'erp:items' %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> İptal
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div> 
