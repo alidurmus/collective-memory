@@ -106,11 +106,24 @@ class CollectiveMemoryAPI:
         
         logger.info(f"Collective Memory API initialized for folder: {self.data_folder}")
 
+        # Start system health monitoring
+        from src.performance_monitor import start_system_monitoring
+        start_system_monitoring(self.data_folder, interval=30)
+
     def _setup_routes(self):
         """Setup all API routes"""
         
         # Register enterprise blueprint for Phase 3 features
         self.app.register_blueprint(enterprise_bp)
+        
+        # Chat API blueprint'i register et
+        try:
+            from src.chat_api import chat_api
+            self.app.register_blueprint(chat_api.blueprint)
+        except ImportError:
+            from src.chat_api import ChatAPI
+            chat_api_instance = ChatAPI()
+            self.app.register_blueprint(chat_api_instance.blueprint)
         
         # Health check
         @self.app.route('/health', methods=['GET'])
@@ -145,27 +158,27 @@ class CollectiveMemoryAPI:
             try:
                 monitor = get_monitor()
                 status = monitor.get_current_status()
-                
+                if status.get("status") == "no_data":
+                    return jsonify(status)
                 # Enhanced status for dashboard
                 dashboard_status = {
                     "timestamp": datetime.now().isoformat(),
                     "overall_health": status.get("status", "unknown"),
                     "health_score": status.get("health_score", 0),
                     "system": {
-                        "cpu_percent": status["system_metrics"]["cpu_percent"],
-                        "memory_percent": status["system_metrics"]["memory_percent"],
-                        "disk_free_gb": status["system_metrics"]["disk_free_gb"],
-                        "python_memory_mb": status["system_metrics"]["python_memory_mb"]
+                        "cpu_percent": status.get("system_metrics", {}).get("cpu_percent", 0),
+                        "memory_percent": status.get("system_metrics", {}).get("memory_percent", 0),
+                        "disk_free_gb": status.get("system_metrics", {}).get("disk_free_gb", 0),
+                        "python_memory_mb": status.get("system_metrics", {}).get("python_memory_mb", 0)
                     },
                     "application": {
                         "uptime_hours": round(status.get("uptime_hours", 0), 1),
-                        "search_requests": status["app_metrics"]["search_requests_count"],
-                        "avg_response_time": status["app_metrics"]["api_response_time_avg"],
-                        "error_count": status["app_metrics"]["error_count"]
+                        "search_requests": status.get("app_metrics", {}).get("search_requests_count", 0),
+                        "avg_response_time": status.get("app_metrics", {}).get("api_response_time_avg", 0),
+                        "error_count": status.get("app_metrics", {}).get("error_count", 0)
                     },
                     "issues": status.get("issues", [])
                 }
-                
                 return jsonify(dashboard_status)
             except Exception as e:
                 return jsonify({"error": str(e), "status": "error"}), 500
@@ -375,6 +388,24 @@ class CollectiveMemoryAPI:
             except Exception as e:
                 logger.error(f"Error performing search: {e}")
                 return jsonify(APIResponse(success=False, error=str(e)).__dict__), 500
+
+        # /api/search alias (GET, POST)
+        @self.app.route('/api/search', methods=['GET', 'POST'])
+        def api_search():
+            if request.method == 'GET':
+                return search()
+            elif request.method == 'POST':
+                data = request.get_json() or {}
+                q = data.get('q', '')
+                # Mevcut search fonksiyonunu parametreyle çağırmak için request.args'i patch et
+                from werkzeug.datastructures import MultiDict
+                request.args = MultiDict({'q': q})
+                return search()
+
+        # /api/auth/login dummy endpoint
+        @self.app.route('/api/auth/login', methods=['POST'])
+        def api_auth_login():
+            return jsonify({"success": True, "data": {"user": {"id": 1, "username": "admin", "role": "ADMIN", "team_id": 1}, "token": "dummy_token"}})
 
         @self.app.route('/search/suggestions', methods=['GET'])
         def get_search_suggestions():

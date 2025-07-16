@@ -76,7 +76,11 @@ class TestEnhancedSearchResult:
             file_size=1024,
             modified_at="2025-01-01T00:00:00Z",
             content_preview="Test content",
-            relevance_score=0.8
+            relevance_score=0.8,
+            match_highlights=[],
+            content_type="text",
+            line_count=10,
+            word_count=100
         )
         
         assert result.semantic_score == 0.0
@@ -186,7 +190,11 @@ class TestEnhancedQueryEngine:
             file_size=1024,
             modified_at="2025-01-01T00:00:00Z",
             content_preview="Test content",
-            relevance_score=0.8
+            relevance_score=0.8,
+            match_highlights=[],
+            content_type="text",
+            line_count=10,
+            word_count=100
         )
         
         enhanced_result = enhanced_query_engine._convert_to_enhanced_result(basic_result)
@@ -235,7 +243,11 @@ class TestEnhancedQueryEngine:
             file_size=1024,
             modified_at=datetime.now().isoformat(),
             content_preview="Test content",
-            relevance_score=0.8
+            relevance_score=0.8,
+            match_highlights=[],
+            content_type="text",
+            line_count=10,
+            word_count=100
         )
         
         score = enhanced_query_engine._calculate_freshness_score(recent_result)
@@ -250,7 +262,11 @@ class TestEnhancedQueryEngine:
             file_size=1024,
             modified_at=(datetime.now() - timedelta(days=400)).isoformat(),
             content_preview="Old content",
-            relevance_score=0.8
+            relevance_score=0.8,
+            match_highlights=[],
+            content_type="text",
+            line_count=10,
+            word_count=100
         )
         
         score = enhanced_query_engine._calculate_freshness_score(old_result)
@@ -268,7 +284,11 @@ class TestEnhancedQueryEngine:
             file_size=1024,
             modified_at="2025-01-01T00:00:00Z",
             content_preview="Test content",
-            relevance_score=0.8
+            relevance_score=0.8,
+            match_highlights=[],
+            content_type="text",
+            line_count=10,
+            word_count=100
         )
         
         score = enhanced_query_engine._calculate_popularity_score(readme_result)
@@ -283,7 +303,11 @@ class TestEnhancedQueryEngine:
             file_size=1024,
             modified_at="2025-01-01T00:00:00Z",
             content_preview="Test content",
-            relevance_score=0.8
+            relevance_score=0.8,
+            match_highlights=[],
+            content_type="text",
+            line_count=10,
+            word_count=100
         )
         
         score = enhanced_query_engine._calculate_popularity_score(random_result)
@@ -303,7 +327,11 @@ class TestEnhancedQueryEngine:
             file_size=1024,
             modified_at="2025-01-01T00:00:00Z",
             content_preview="This document explains Context7 framework development best practices",
-            relevance_score=0.8
+            relevance_score=0.8,
+            match_highlights=[],
+            content_type="text",
+            line_count=10,
+            word_count=100
         )
         
         score = enhanced_query_engine._calculate_context_relevance(relevant_result, query)
@@ -318,7 +346,11 @@ class TestEnhancedQueryEngine:
             file_size=1024,
             modified_at="2025-01-01T00:00:00Z",
             content_preview="This is about cooking recipes and nothing else",
-            relevance_score=0.8
+            relevance_score=0.8,
+            match_highlights=[],
+            content_type="text",
+            line_count=10,
+            word_count=100
         )
         
         score = enhanced_query_engine._calculate_context_relevance(irrelevant_result, query)
@@ -510,7 +542,11 @@ class TestIntegration:
                     file_size=1024,
                     modified_at="2025-01-01T00:00:00Z",
                     content_preview="Context7 framework documentation",
-                    relevance_score=0.8
+                    relevance_score=0.8,
+                    match_highlights=[],
+                    content_type="text",
+                    line_count=10,
+                    word_count=100
                 )
             ]
             

@@ -66,6 +66,10 @@ class SystemHealthMonitor:
         # Setup logging
         logging.basicConfig(level=logging.INFO)
         self.logger = logging.getLogger(__name__)
+
+        # İlk veri toplama (deque boşsa)
+        self.system_metrics.append(self._collect_system_metrics())
+        self.app_metrics.append(self._collect_application_metrics())
         
     def start_monitoring(self, interval: int = 30):
         """Start real-time monitoring"""
@@ -213,7 +217,12 @@ class SystemHealthMonitor:
     def get_current_status(self) -> Dict[str, Any]:
         """Get current system status"""
         if not self.system_metrics or not self.app_metrics:
-            return {"status": "no_data", "message": "Monitoring not started or no data available"}
+            return {
+                "status": "no_data",
+                "message": "Monitoring not started or no data available",
+                "system_metrics": {},
+                "app_metrics": {}
+            }
             
         latest_system = self.system_metrics[-1]
         latest_app = self.app_metrics[-1]

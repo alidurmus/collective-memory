@@ -1,0 +1,59 @@
+{
+  "system_metrics": [
+    {
+      "timestamp": "2025-07-16T15:58:18.223136",
+      "cpu_percent": 31.2,
+      "memory_percent": 85.6,
+      "memory_used_gb": 13.559593200683594,
+      "disk_usage_percent": 91.5,
+      "disk_free_gb": 40.64628601074219,
+      "active_connections": 176,
+      "process_count": 362,
+      "python_memory_mb": 439.421875,
+      "load_average": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "timestamp": "2025-07-16T15:58:19.237663",
+      "cpu_percent": 30.3,
+      "memory_percent": 85.5,
+      "memory_used_gb": 13.554309844970703,
+      "disk_usage_percent": 91.5,
+      "disk_free_gb": 40.64616775512695,
+      "active_connections": 174,
+      "process_count": 366,
+      "python_memory_mb": 446.1875,
+      "load_average": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  ],
+  "app_metrics": [
+    {
+      "timestamp": "2025-07-16T15:58:19.230135",
+      "search_requests_count": 0,
+      "api_response_time_avg": 0.0,
+      "database_connections": 1,
+      "cache_hit_rate": 0.85,
+      "active_sessions": 1,
+      "error_count": 0,
+      "uptime_seconds": 1
+    },
+    {
+      "timestamp": "2025-07-16T15:58:20.256735",
+      "search_requests_count": 0,
+      "api_response_time_avg": 0.0,
+      "database_connections": 1,
+      "cache_hit_rate": 0.85,
+      "active_sessions": 1,
+      "error_count": 0,
+      "uptime_seconds": 2
+    }
+  ],
+  "last_updated": "2025-07-16T15:58:20.256784"
+}
