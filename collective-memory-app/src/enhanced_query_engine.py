@@ -2,6 +2,7 @@
 """
 Enhanced Query Engine - Semantic search ve AI-powered scoring sistemi
 Gelişmiş arama algoritmaları ile güçlendirilmiş query engine
+Performance optimized with caching and parallel processing
 """
 
 import re
@@ -13,6 +14,11 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Any, Union
 from dataclasses import dataclass, field
 from collections import defaultdict, Counter
+import hashlib
+import pickle
+import time
+from functools import lru_cache
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # AI/ML imports
 try:
@@ -30,10 +36,21 @@ except ImportError:
     print("⚠️  ML libraries not available. Running in basic mode.")
 
 from colorama import init, Fore, Style
-from .query_engine import QueryEngine, SearchQuery, SearchResult
+
+# Fixed import - using relative import
+try:
+    from .query_engine import QueryEngine, SearchQuery, SearchResult
+except ImportError:
+    # Fallback for when running as main module
+    from query_engine import QueryEngine, SearchQuery, SearchResult
 
 # Colorama initialize
 init()
+
+# Performance cache
+_SEMANTIC_CACHE = {}
+_SCORING_CACHE = {}
+_CACHE_MAX_SIZE = 1000
 
 @dataclass
 class EnhancedSearchQuery(SearchQuery):
@@ -55,6 +72,11 @@ class EnhancedSearchQuery(SearchQuery):
     content_quality_filter: bool = False
     min_word_count: Optional[int] = None
     language_filter: Optional[str] = None
+    
+    # Performance settings
+    use_caching: bool = True
+    parallel_processing: bool = True
+    max_workers: int = 4
 
 @dataclass
 class EnhancedSearchResult(SearchResult):
@@ -77,6 +99,10 @@ class EnhancedSearchResult(SearchResult):
     # Enhanced context
     contextual_snippets: List[str] = field(default_factory=list)
     related_topics: List[str] = field(default_factory=list)
+    
+    # Performance metrics
+    processing_time: float = 0.0
+    cache_hit: bool = False
 
 class EnhancedQueryEngine(QueryEngine):
     """Gelişmiş query engine - Semantic search ve AI-powered scoring"""
@@ -89,6 +115,12 @@ class EnhancedQueryEngine(QueryEngine):
         self.tfidf_vectorizer = None
         self.document_vectors = None
         self.stemmer = PorterStemmer() if ML_AVAILABLE else None
+        
+        # Performance tracking
+        self.query_count = 0
+        self.total_query_time = 0.0
+        self.cache_hits = 0
+        self.cache_misses = 0
         
         # Download NLTK data if available
         if ML_AVAILABLE:
@@ -129,8 +161,42 @@ class EnhancedQueryEngine(QueryEngine):
             logging.error(f"❌ Model initialization failed: {e}")
             self.ml_available = False
     
+    def _get_cache_key(self, query: EnhancedSearchQuery) -> str:
+        """Generate cache key for query"""
+        key_data = {
+            'text': query.text,
+            'use_semantic_search': query.use_semantic_search,
+            'semantic_similarity_threshold': query.semantic_similarity_threshold,
+            'use_ai_scoring': query.use_ai_scoring,
+            'extract_entities': query.extract_entities
+        }
+        return hashlib.md5(json.dumps(key_data, sort_keys=True).encode()).hexdigest()
+    
+    def _clean_cache(self):
+        """Clean cache if it gets too large"""
+        global _SEMANTIC_CACHE, _SCORING_CACHE
+        
+        if len(_SEMANTIC_CACHE) > _CACHE_MAX_SIZE:
+            # Remove oldest entries
+            _SEMANTIC_CACHE = dict(list(_SEMANTIC_CACHE.items())[-_CACHE_MAX_SIZE//2:])
+        
+        if len(_SCORING_CACHE) > _CACHE_MAX_SIZE:
+            _SCORING_CACHE = dict(list(_SCORING_CACHE.items())[-_CACHE_MAX_SIZE//2:])
+    
     def search(self, query: EnhancedSearchQuery) -> List[EnhancedSearchResult]:
-        """Gelişmiş arama işlemi"""
+        """Gelişmiş arama işlemi - Performance optimized"""
+        
+        start_time = time.time()
+        self.query_count += 1
+        
+        # Check cache first
+        cache_key = self._get_cache_key(query) if query.use_caching else None
+        if cache_key and cache_key in _SEMANTIC_CACHE:
+            cached_results = _SEMANTIC_CACHE[cache_key]
+            for result in cached_results:
+                result.cache_hit = True
+            self.cache_hits += 1
+            return cached_results
         
         # Basic search first
         basic_results = super().search(query)
@@ -139,23 +205,134 @@ class EnhancedQueryEngine(QueryEngine):
         enhanced_results = [self._convert_to_enhanced_result(result) for result in basic_results]
         
         if not self.ml_available or not query.use_semantic_search:
+            processing_time = time.time() - start_time
+            self.total_query_time += processing_time
+            for result in enhanced_results:
+                result.processing_time = processing_time
             return enhanced_results
         
         # Apply semantic search enhancements
         try:
-            enhanced_results = self._apply_semantic_search(enhanced_results, query)
-            enhanced_results = self._apply_ai_scoring(enhanced_results, query)
-            enhanced_results = self._extract_contextual_information(enhanced_results, query)
+            if query.parallel_processing and len(enhanced_results) > 10:
+                enhanced_results = self._parallel_enhance_results(enhanced_results, query)
+            else:
+                enhanced_results = self._sequential_enhance_results(enhanced_results, query)
             
         except Exception as e:
             logging.error(f"❌ Enhanced search failed: {e}")
             # Fall back to basic results
-            return enhanced_results
-        
+            
         # Sort by enhanced relevance
         enhanced_results = self._sort_enhanced_results(enhanced_results, query)
         
+        # Cache results
+        if query.use_caching and cache_key:
+            _SEMANTIC_CACHE[cache_key] = enhanced_results[:query.limit]
+            self._clean_cache()
+            self.cache_misses += 1
+        
+        # Update performance metrics
+        processing_time = time.time() - start_time
+        self.total_query_time += processing_time
+        for result in enhanced_results:
+            result.processing_time = processing_time
+        
         return enhanced_results[:query.limit]
+    
+    def _parallel_enhance_results(self, results: List[EnhancedSearchResult], query: EnhancedSearchQuery) -> List[EnhancedSearchResult]:
+        """Parallel processing for large result sets"""
+        
+        def process_result(result):
+            result = self._apply_semantic_search_single(result, query)
+            result = self._apply_ai_scoring_single(result, query)
+            result = self._extract_contextual_information_single(result, query)
+            return result
+        
+        with ThreadPoolExecutor(max_workers=query.max_workers) as executor:
+            future_to_result = {executor.submit(process_result, result): result for result in results}
+            
+            enhanced_results = []
+            for future in as_completed(future_to_result):
+                try:
+                    enhanced_result = future.result()
+                    enhanced_results.append(enhanced_result)
+                except Exception as e:
+                    logging.error(f"Parallel processing error: {e}")
+                    # Add original result if enhancement fails
+                    enhanced_results.append(future_to_result[future])
+        
+        return enhanced_results
+    
+    def _sequential_enhance_results(self, results: List[EnhancedSearchResult], query: EnhancedSearchQuery) -> List[EnhancedSearchResult]:
+        """Sequential processing for smaller result sets"""
+        
+        results = self._apply_semantic_search(results, query)
+        results = self._apply_ai_scoring(results, query)
+        results = self._extract_contextual_information(results, query)
+        
+        return results
+    
+    @lru_cache(maxsize=256)
+    def _calculate_content_quality_cached(self, content_hash: str, content: str) -> float:
+        """Cached content quality calculation"""
+        return self._calculate_content_quality_impl(content)
+    
+    def _calculate_content_quality_impl(self, content: str) -> float:
+        """Implementation of content quality calculation"""
+        
+        score = 0.0
+        
+        # Word count factor
+        word_count = len(content.split())
+        if word_count > 50:
+            score += 0.3
+        if word_count > 200:
+            score += 0.2
+        
+        # Structure indicators
+        if any(indicator in content.lower() for indicator in ['#', '##', '###', '####']):
+            score += 0.2  # Has headings
+        
+        if any(indicator in content for indicator in ['```', '`', 'code']):
+            score += 0.1  # Has code examples
+        
+        if any(indicator in content for indicator in ['http', 'https', '[', ']']):
+            score += 0.1  # Has links or references
+        
+        # Language quality (simple heuristic)
+        sentences = content.split('.')
+        if len(sentences) > 3:
+            avg_sentence_length = sum(len(s.split()) for s in sentences) / len(sentences)
+            if 10 <= avg_sentence_length <= 25:  # Good sentence length
+                score += 0.1
+        
+        return min(score, 1.0)
+    
+    def get_performance_stats(self) -> Dict[str, Any]:
+        """Get performance statistics"""
+        
+        avg_query_time = self.total_query_time / self.query_count if self.query_count > 0 else 0
+        cache_hit_rate = self.cache_hits / (self.cache_hits + self.cache_misses) if (self.cache_hits + self.cache_misses) > 0 else 0
+        
+        return {
+            'query_count': self.query_count,
+            'total_query_time': self.total_query_time,
+            'average_query_time': avg_query_time,
+            'cache_hits': self.cache_hits,
+            'cache_misses': self.cache_misses,
+            'cache_hit_rate': cache_hit_rate,
+            'cache_size': len(_SEMANTIC_CACHE),
+            'ml_available': self.ml_available
+        }
+    
+    def clear_cache(self):
+        """Clear all caches"""
+        global _SEMANTIC_CACHE, _SCORING_CACHE
+        _SEMANTIC_CACHE.clear()
+        _SCORING_CACHE.clear()
+        self.cache_hits = 0
+        self.cache_misses = 0
+        logging.info("✅ Cache cleared")
     
     def _convert_to_enhanced_result(self, result: SearchResult) -> EnhancedSearchResult:
         """Convert basic result to enhanced result"""

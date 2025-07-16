@@ -1,6 +1,29 @@
 {
+  "name": "collective-memory-app",
+  "version": "1.0.0",
+  "description": "Collective Memory Application Tests",
+  "scripts": {
+    "dev": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "preview": "cd frontend && npm run preview",
+    "frontend:install": "cd frontend && npm install",
+    "frontend:dev": "cd frontend && npm run dev",
+    "frontend:build": "cd frontend && npm run build",
+    "test": "playwright test",
+    "test:ui": "playwright test tests/ui",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "test:report": "playwright show-report",
+    "test:install": "playwright install",
+    "test:smoke": "playwright test --grep=\"smoke\"",
+    "test:quick": "playwright test tests/ui/basic-smoke.spec.js",
+    "start:api": "python api_server.py --host localhost --port 8000",
+    "start:full": "concurrently \"npm run start:api\" \"npm run dev\"",
+    "install:all": "npm install && cd frontend && npm install"
+  },
   "devDependencies": {
     "@playwright/test": "^1.54.1",
-    "playwright": "^1.54.1"
+    "playwright": "^1.54.1",
+    "concurrently": "^8.2.2"
   }
 }

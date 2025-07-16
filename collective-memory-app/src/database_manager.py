@@ -31,6 +31,19 @@ class DatabaseManager:
         )
         self.logger = logging.getLogger(__name__)
         
+        # Stopwords for prompt similarity
+        self.stopwords = {
+            'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
+            'of', 'with', 'by', 'as', 'is', 'was', 'are', 'were', 'be', 'been',
+            'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could',
+            'should', 'may', 'might', 'must', 'shall', 'can', 'this', 'that',
+            'these', 'those', 'i', 'you', 'he', 'she', 'it', 'we', 'they',
+            # Turkish stop words
+            've', 'bir', 'bu', 'da', 'de', 'ile', 'o', 'için', 'var', 'olan',
+            'den', 'dan', 'deki', 'nin', 'nın', 'nun', 'nün', 'si', 'sı', 'su',
+            'şu', 'her', 'hiç', 'daha', 'çok', 'az', 'en', 'gibi', 'kadar'
+        }
+        
         # Database schema
         self.schema = {
             'files': '''
@@ -82,6 +95,46 @@ class DatabaseManager:
                     change_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     change_description TEXT,
                     FOREIGN KEY (file_id) REFERENCES files (id) ON DELETE CASCADE
+                )
+            ''',
+            'prompt_history': '''
+                CREATE TABLE IF NOT EXISTS prompt_history (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    prompt_text TEXT NOT NULL,
+                    prompt_hash TEXT UNIQUE NOT NULL,
+                    search_type TEXT DEFAULT 'basic',
+                    results_count INTEGER DEFAULT 0,
+                    response_time_ms INTEGER DEFAULT 0,
+                    context_preserved TEXT,
+                    user_session TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    last_used_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''',
+            'prompt_relationships': '''
+                CREATE TABLE IF NOT EXISTS prompt_relationships (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    prompt_id_1 INTEGER NOT NULL,
+                    prompt_id_2 INTEGER NOT NULL,
+                    similarity_score REAL NOT NULL,
+                    relationship_type TEXT DEFAULT 'semantic',
+                    context_overlap REAL DEFAULT 0.0,
+                    time_distance_hours REAL DEFAULT 0.0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (prompt_id_1) REFERENCES prompt_history (id) ON DELETE CASCADE,
+                    FOREIGN KEY (prompt_id_2) REFERENCES prompt_history (id) ON DELETE CASCADE,
+                    UNIQUE(prompt_id_1, prompt_id_2)
+                )
+            ''',
+            'prompt_context': '''
+                CREATE TABLE IF NOT EXISTS prompt_context (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    prompt_id INTEGER NOT NULL,
+                    context_key TEXT NOT NULL,
+                    context_value TEXT NOT NULL,
+                    context_weight REAL DEFAULT 1.0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (prompt_id) REFERENCES prompt_history (id) ON DELETE CASCADE
                 )
             '''
         }
@@ -453,6 +506,228 @@ class DatabaseManager:
         except sqlite3.Error as e:
             self.logger.error(f"Database error in get_total_file_count: {e}")
             return 0
+            
+    def add_prompt(self, prompt_text: str, search_type: str = 'basic', 
+                   results_count: int = 0, response_time_ms: int = 0, 
+                   context_preserved: str = None, user_session: str = None) -> Optional[int]:
+        """Yeni prompt ekler ve benzer promptlarla ilişkilendirir"""
+        if not self.connection:
+            return None
+            
+        try:
+            import hashlib
+            from datetime import datetime
+            
+            # Prompt hash hesapla
+            prompt_hash = hashlib.md5(prompt_text.encode()).hexdigest()
+            
+            cursor = self.connection.cursor()
+            
+            # Mevcut prompt var mı kontrol et
+            cursor.execute('SELECT id, last_used_at FROM prompt_history WHERE prompt_hash = ?', (prompt_hash,))
+            existing = cursor.fetchone()
+            
+            if existing:
+                # Varolan prompt'u güncelle
+                cursor.execute('''
+                    UPDATE prompt_history 
+                    SET last_used_at = CURRENT_TIMESTAMP, results_count = ?, response_time_ms = ?
+                    WHERE id = ?
+                ''', (results_count, response_time_ms, existing['id']))
+                prompt_id = existing['id']
+            else:
+                # Yeni prompt ekle
+                cursor.execute('''
+                    INSERT INTO prompt_history 
+                    (prompt_text, prompt_hash, search_type, results_count, response_time_ms, 
+                     context_preserved, user_session)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                ''', (prompt_text, prompt_hash, search_type, results_count, response_time_ms,
+                      context_preserved, user_session))
+                prompt_id = cursor.lastrowid
+            
+            self.connection.commit()
+            
+            # Benzer promptlarla ilişki kur (async task için)
+            self._update_prompt_relationships(prompt_id, prompt_text)
+            
+            return prompt_id
+            
+        except sqlite3.Error as e:
+            self.logger.error(f"Database error in add_prompt: {e}")
+            return None
+            
+    def get_similar_prompts(self, prompt_text: str, limit: int = 5, 
+                          similarity_threshold: float = 0.6) -> List[Dict]:
+        """Benzer promptları bulur"""
+        if not self.connection:
+            return []
+            
+        try:
+            cursor = self.connection.cursor()
+            
+            # Basit keyword matching ile başla
+            words = prompt_text.lower().split()
+            if len(words) < 2:
+                return []
+            
+            # En sık kullanılan kelimeleri al
+            important_words = [w for w in words if len(w) > 3 and w not in self.stopwords][:5]
+            
+            if not important_words:
+                return []
+            
+            # LIKE sorgusu oluştur
+            like_conditions = []
+            params = []
+            for word in important_words:
+                like_conditions.append("LOWER(prompt_text) LIKE ?")
+                params.append(f"%{word}%")
+            
+            params.append(limit)
+            
+            query = f'''
+                SELECT ph.*, 
+                       COUNT(*) as keyword_matches,
+                       (julianday('now') - julianday(ph.last_used_at)) * 24 as hours_ago
+                FROM prompt_history ph
+                WHERE ({' OR '.join(like_conditions)})
+                AND prompt_text != ?
+                GROUP BY ph.id
+                ORDER BY keyword_matches DESC, hours_ago ASC
+                LIMIT ?
+            '''
+            params.insert(-1, prompt_text)  # Aynı prompt'u hariç tut
+            
+            cursor.execute(query, params)
+            results = []
+            
+            for row in cursor.fetchall():
+                similarity_score = min(row['keyword_matches'] / len(important_words), 1.0)
+                if similarity_score >= similarity_threshold:
+                    results.append({
+                        'id': row['id'],
+                        'prompt_text': row['prompt_text'],
+                        'similarity_score': similarity_score,
+                        'last_used_at': row['last_used_at'],
+                        'results_count': row['results_count'],
+                        'search_type': row['search_type']
+                    })
+            
+            return results
+            
+        except sqlite3.Error as e:
+            self.logger.error(f"Database error in get_similar_prompts: {e}")
+            return []
+            
+    def get_related_prompts(self, prompt_id: int, limit: int = 5) -> List[Dict]:
+        """Bir prompt'un ilişkili promptlarını getirir"""
+        if not self.connection:
+            return []
+            
+        try:
+            cursor = self.connection.cursor()
+            
+            cursor.execute('''
+                SELECT ph.*, pr.similarity_score, pr.relationship_type, pr.context_overlap
+                FROM prompt_relationships pr
+                JOIN prompt_history ph ON (
+                    (pr.prompt_id_1 = ? AND ph.id = pr.prompt_id_2) OR 
+                    (pr.prompt_id_2 = ? AND ph.id = pr.prompt_id_1)
+                )
+                ORDER BY pr.similarity_score DESC, ph.last_used_at DESC
+                LIMIT ?
+            ''', (prompt_id, prompt_id, limit))
+            
+            results = []
+            for row in cursor.fetchall():
+                results.append({
+                    'id': row['id'],
+                    'prompt_text': row['prompt_text'],
+                    'similarity_score': row['similarity_score'],
+                    'relationship_type': row['relationship_type'],
+                    'context_overlap': row['context_overlap'],
+                    'last_used_at': row['last_used_at'],
+                    'results_count': row['results_count']
+                })
+            
+            return results
+            
+        except sqlite3.Error as e:
+            self.logger.error(f"Database error in get_related_prompts: {e}")
+            return []
+            
+    def _update_prompt_relationships(self, prompt_id: int, prompt_text: str):
+        """Prompt ile diğer promptlar arasındaki ilişkileri günceller"""
+        try:
+            similar_prompts = self.get_similar_prompts(prompt_text, limit=10, similarity_threshold=0.5)
+            
+            cursor = self.connection.cursor()
+            
+            for similar in similar_prompts:
+                similarity_score = similar['similarity_score']
+                other_id = similar['id']
+                
+                # Zaman mesafesi hesapla
+                cursor.execute('''
+                    SELECT (julianday('now') - julianday(created_at)) * 24 as hours_ago
+                    FROM prompt_history WHERE id = ?
+                ''', (other_id,))
+                result = cursor.fetchone()
+                time_distance = result['hours_ago'] if result else 0
+                
+                # İlişki kaydı ekle/güncelle
+                cursor.execute('''
+                    INSERT OR REPLACE INTO prompt_relationships
+                    (prompt_id_1, prompt_id_2, similarity_score, relationship_type, 
+                     time_distance_hours)
+                    VALUES (?, ?, ?, 'semantic', ?)
+                ''', (min(prompt_id, other_id), max(prompt_id, other_id), 
+                      similarity_score, time_distance))
+            
+            self.connection.commit()
+            
+        except sqlite3.Error as e:
+            self.logger.error(f"Database error in _update_prompt_relationships: {e}")
+            
+    def get_prompt_context_suggestions(self, current_prompt: str, limit: int = 3) -> List[Dict]:
+        """Mevcut prompt'a göre context önerileri getirir"""
+        if not self.connection:
+            return []
+            
+        try:
+            # Benzer promptları bul
+            similar_prompts = self.get_similar_prompts(current_prompt, limit=limit*2)
+            
+            suggestions = []
+            for prompt in similar_prompts:
+                # Bu prompt'un context'ini al
+                related = self.get_related_prompts(prompt['id'], limit=2)
+                
+                for rel in related:
+                    if rel['similarity_score'] > 0.7:  # Yüksek benzerlik
+                        suggestions.append({
+                            'suggested_prompt': rel['prompt_text'],
+                            'context_reason': f"'{prompt['prompt_text'][:50]}...' ile ilişkili",
+                            'confidence': rel['similarity_score'],
+                            'last_used': rel['last_used_at']
+                        })
+            
+            # Benzersiz önerileri döndür
+            seen = set()
+            unique_suggestions = []
+            for sugg in sorted(suggestions, key=lambda x: x['confidence'], reverse=True):
+                if sugg['suggested_prompt'] not in seen:
+                    seen.add(sugg['suggested_prompt'])
+                    unique_suggestions.append(sugg)
+                    if len(unique_suggestions) >= limit:
+                        break
+            
+            return unique_suggestions
+            
+        except sqlite3.Error as e:
+            self.logger.error(f"Database error in get_prompt_context_suggestions: {e}")
+            return []
 
 def main():
     """Ana fonksiyon - test için"""

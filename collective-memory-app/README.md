@@ -1,19 +1,58 @@
-# Collective Memory v2.1 - Advanced Knowledge Management System
+# Collective Memory v3.0 - Enterprise Knowledge Management System
 
-Collective Memory is a powerful, AI-enhanced knowledge management and search system that helps you organize, index, and quickly find information across your digital workspace. Version 2.1 introduces a modern web dashboard, semantic search capabilities, and real-time collaboration features.
+Collective Memory is a powerful, AI-enhanced knowledge management and search system that helps you organize, index, and quickly find information across your digital workspace. **Version 3.0 Enterprise** introduces comprehensive team collaboration, user management, real-time features, and **JSON Chat System** for structured conversation management.
 
 ![Collective Memory Dashboard](docs/images/dashboard-preview.png)
 
-## 🌟 Key Features
+## 🌟 Enterprise Features (NEW v3.0)
+
+### 🏢 Enterprise Authentication & User Management
+- **🔐 Role-Based Access Control**: 4-tier permission system (Admin, Manager, Developer, Viewer)
+- **👥 User Management**: Complete user lifecycle with team assignments
+- **🔒 Secure Authentication**: Session-based login with encrypted passwords
+- **📊 Activity Tracking**: Comprehensive audit trails and user analytics
+- **🎭 Team-Based Permissions**: Granular access control by team membership
+
+### 👥 Team Collaboration Infrastructure
+- **🏢 Multi-Team Support**: Create and manage multiple teams
+- **💬 Real-time Messaging**: WebSocket-powered instant messaging
+- **🏠 Collaboration Rooms**: Team-based and general chat rooms
+- **📱 Responsive Team Dashboard**: Mobile-friendly team management interface
+- **🔔 Live Notifications**: Real-time user join/leave notifications
+
+### 📊 Advanced Enterprise Analytics
+- **📈 Usage Metrics**: Detailed user activity and system performance
+- **👤 User Analytics**: Individual and team performance insights
+- **🎯 Search Analytics**: Query patterns and result effectiveness
+- **⚡ Performance Monitoring**: Real-time system health metrics
+- **📊 Executive Dashboard**: High-level enterprise overview
+
+### ☁️ Cloud Synchronization Foundation
+- **🌐 Multi-Provider Support**: AWS S3, Azure Blob, Google Cloud
+- **🔄 Real-time Sync**: Automatic data synchronization
+- **⚙️ Admin Controls**: Enable/disable sync with proper permissions
+- **📊 Sync Monitoring**: Status tracking and error reporting
+
+### 💬 JSON Chat System (NEW v3.0)
+- **📁 Structured Storage**: Conversations stored in organized JSON format
+- **🔍 Advanced Search**: Full-text search across all conversations
+- **📤 Export Capabilities**: JSON and Markdown export with filtering
+- **🔗 Cursor Integration**: Import existing Cursor chat history
+- **⚙️ CLI Management**: Complete terminal-based conversation management
+- **🔌 REST API**: Programmatic access with comprehensive endpoints
+- **📊 Analytics**: Conversation metrics and usage statistics
+- **🏷️ Tagging System**: Organize conversations with custom tags
+
+## 🌟 Core Features (v2.1 & Earlier)
 
 ### Core Search & Indexing
 - **🔍 Advanced Search Engine**: Fast full-text search with relevance scoring
-- **🧠 Semantic Search**: AI-powered contextual understanding (NEW in v2.1)
+- **🧠 Semantic Search**: AI-powered contextual understanding
 - **📁 Auto-Discovery**: Automatic file detection and real-time indexing
 - **⚡ Lightning Fast**: Sub-100ms search responses with intelligent caching
 - **📊 Rich Metadata**: Comprehensive file analysis and content extraction
 
-### Modern Web Dashboard (NEW v2.1)
+### Modern Web Dashboard
 - **🎨 Beautiful UI**: Modern React-based interface with dark/light modes
 - **📈 Analytics Dashboard**: Usage statistics and performance metrics
 - **🔄 Real-time Updates**: WebSocket integration for live status updates
@@ -25,13 +64,6 @@ Collective Memory is a powerful, AI-enhanced knowledge management and search sys
 - **💡 Query Suggestions**: Intelligent search recommendations
 - **🔗 Entity Recognition**: Automatic extraction of key concepts
 - **📝 Content Snippets**: Contextual result previews
-
-### Enterprise Features
-- **🚀 High Performance**: Multi-threaded processing and efficient algorithms
-- **📁 Cross-Platform**: Windows, macOS, and Linux support
-- **🔒 Secure**: Local-first approach with optional authentication
-- **🌐 API-First**: RESTful API with WebSocket support
-- **📊 Monitoring**: Built-in performance monitoring and health checks
 
 ## 🚀 Quick Start
 
@@ -55,11 +87,11 @@ npm install
 
 3. **Start the system**:
 ```bash
-# Terminal version
-python main.py
+# Enterprise API server (recommended for v3.0)
+python api_server.py --enterprise --data-folder /path/to/your/data
 
-# Web dashboard (recommended)
-python api_server.py --data-folder /path/to/your/data
+# Development server
+python api_server.py --debug
 ```
 
 4. **Access the web dashboard**:
@@ -69,211 +101,71 @@ npm run dev
 # Open http://localhost:3000 in your browser
 ```
 
-### Basic Usage
-
-#### Command Line Interface
+5. **Enterprise Setup** (NEW v3.0):
 ```bash
-# Index current directory
-python main.py
+# Create admin user
+python -c "
+from src.enterprise_features import EnterpriseManager
+em = EnterpriseManager()
+em.create_user('admin', 'admin@company.com', 'secure_password', 'ADMIN')
+"
 
-# Search for content
-python main.py --search "your search query"
-
-# Export search results
-python main.py --search "Django error" --save-to results.md
+# Access Enterprise Login at http://localhost:3000/enterprise/login
 ```
 
-#### Web Dashboard
-1. Navigate to `http://localhost:3000`
-2. Use the search bar or click "Search" in the sidebar
-3. Enable semantic search for AI-powered results
-4. Export results in Markdown format
-5. Monitor system performance in the Analytics section
-
-## 🛠 Advanced Configuration
-
-### System Settings
-
-Create a `.collective-memory/config/settings.json` file:
-
-```json
-{
-  "maxFileSize": 100,
-  "maxIndexSize": 1000,
-  "autoIndex": true,
-  "enableSemantic": true,
-  "defaultSearchLimit": 50,
-  "cacheEnabled": true,
-  "watchedPaths": ["/path/to/monitor"]
-}
-```
-
-### API Server Options
-
+6. **JSON Chat System Setup** (NEW v3.0):
 ```bash
-# Custom host and port
-python api_server.py --host 0.0.0.0 --port 8080
+# Create your first conversation
+python src/chat_cli.py create "Project Planning" --project-path "/my/project"
 
-# Debug mode
-python api_server.py --debug
+# Search conversations
+python src/chat_cli.py search "API design" --export markdown
 
-# Specific data folder
-python api_server.py --data-folder /home/user/documents
+# Import Cursor chat history
+python src/chat_cli.py import-cursor --workspace-path "/cursor/workspace"
 ```
 
-### Environment Variables
+## 🏢 Enterprise Usage
 
-```bash
-# Frontend configuration
-VITE_API_URL=http://localhost:8000
-VITE_WS_URL=ws://localhost:8000
+### Team Management
+1. **Admin Login**: Use enterprise login interface
+2. **Create Teams**: Set up organizational teams
+3. **Add Users**: Invite team members with appropriate roles
+4. **Configure Permissions**: Set up role-based access control
 
-# Backend configuration
-SECRET_KEY=your-secret-key
-LOG_LEVEL=info
-```
+### Real-time Collaboration
+1. **Join Team Room**: Access team collaboration space
+2. **Instant Messaging**: Real-time team communication
+3. **Live Activity Feed**: See team member activities
+4. **Shared Workspaces**: Collaborative knowledge management
 
-## 📊 System Architecture
+### Analytics & Monitoring
+1. **Enterprise Dashboard**: High-level metrics and KPIs
+2. **User Activity Tracking**: Individual and team performance
+3. **Search Analytics**: Query optimization insights
+4. **System Health Monitoring**: Real-time performance metrics
 
-```mermaid
-graph TB
-    A[Web Dashboard] --> B[REST API Server]
-    B --> C[Enhanced Query Engine]
-    B --> D[Content Indexer]
-    B --> E[File Monitor]
-    C --> F[Database Manager]
-    D --> F
-    E --> D
-    G[WebSocket] --> B
-    H[Semantic Search] --> C
-```
-
-### Components
-
-- **Web Dashboard**: Modern React frontend with real-time updates
-- **REST API Server**: Flask-based API with WebSocket support
-- **Enhanced Query Engine**: AI-powered search with semantic capabilities
-- **Content Indexer**: Multi-threaded file processing and analysis
-- **File Monitor**: Real-time file system monitoring
-- **Database Manager**: SQLite-based storage with optimization
-
-## 🔧 API Reference
-
-### Search Endpoints
-
-```http
-GET /search?q={query}&semantic=true&limit=50
-POST /search/export
-GET /search/suggestions?q={partial_query}
-```
-
-### System Endpoints
-
-```http
-GET /system/status
-GET /system/stats
-GET /system/indexing
-POST /system/reindex
-POST /system/cache/clear
-```
-
-### Configuration Endpoints
-
-```http
-GET /config
-PUT /config
-```
-
-### WebSocket Events
-
-```javascript
-// Real-time events
-socket.on('search_performed', (data) => {
-  console.log('Search completed:', data);
-});
-
-socket.on('indexing_started', (data) => {
-  console.log('Indexing began:', data);
-});
-```
-
-## 📈 Performance Benchmarks
-
-| Metric | Performance |
-|--------|-------------|
-| Search Speed | < 100ms (typical) |
-| Indexing Speed | 850+ files/minute |
-| Memory Usage | < 200MB (idle) |
-| Disk Efficiency | 2-5MB per 1000 files |
-| Cache Hit Rate | 85-95% |
-
-## 🧪 Testing
-
-Collective Memory v2.1 comes with a comprehensive test suite covering backend API, frontend UI, and core modules.
-
-### Test Overview
-- **✅ Basic Module Tests**: 14/14 passing - Core functionality validation
-- **⚙️ API Endpoint Tests**: Flask REST API and WebSocket testing
-- **🎭 UI Tests**: Playwright-based frontend testing [[memory:592592]]
-- **📊 Performance Tests**: Response time and load testing
-
-### Quick Test Run
-```bash
-# Install Playwright browsers (first time)
-python tests/test_runner.py --install
-
-# Run basic tests
-python tests/test_runner.py --basic
-
-# Run all tests (requires servers running)
-python tests/test_runner.py --all
-```
-
-### Detailed Testing
-
-#### 1. Basic Module Tests
-```bash
-python -m pytest tests/test_basic.py -v
-```
-Tests core modules: CursorDatabaseReader, ContextCollector, QueryBuilder, TriggerParser
-
-#### 2. API Tests (Backend Required)
-```bash
-# Terminal 1: Start API server
-python api_server.py
-
-# Terminal 2: Run API tests
-python tests/test_runner.py --api
-```
-
-#### 3. UI Tests (Frontend Required)
-```bash
-# Terminal 1: Start frontend
-cd frontend && npm run dev
-
-# Terminal 2: Run UI tests
-python tests/test_runner.py --ui
-```
-
-### Test Documentation
-See [`tests/README.md`](tests/README.md) for comprehensive testing guide.
-
-## 🤝 Contributing
-
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
-
-### Development Setup
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Install development dependencies: `pip install -r requirements-dev.txt`
-4. Make your changes and add tests
-5. Run the test suite: `pytest`
-6. Submit a pull request
+### JSON Chat System Management
+1. **Conversation Organization**: Create, tag, and organize chats
+2. **Advanced Search**: Full-text search across all conversations
+3. **Export & Import**: Backup and migrate conversation data
+4. **API Integration**: Programmatic conversation management
 
 ## 📋 Changelog
 
-### v2.1.0 (Current)
+### v3.0.0 (Current - Enterprise Release)
+- ✨ **NEW**: Enterprise authentication with role-based access control
+- ✨ **NEW**: Multi-user team collaboration infrastructure
+- ✨ **NEW**: Real-time collaboration with WebSocket integration
+- ✨ **NEW**: Advanced enterprise analytics dashboard
+- ✨ **NEW**: Cloud synchronization foundation
+- ✨ **NEW**: JSON Chat System for structured conversation management
+- ✨ **NEW**: Modern enterprise UI components (TeamDashboard, EnterpriseAnalytics, EnterpriseLogin)
+- 🔧 **IMPROVED**: Enhanced API with 25+ new enterprise endpoints
+- 🔧 **IMPROVED**: WebSocket support for real-time features
+- 🛡️ **SECURITY**: Enterprise-grade security and audit trails
+
+### v2.1.0 (Previous)
 - ✨ **NEW**: Modern React web dashboard
 - ✨ **NEW**: Semantic search with AI-powered relevance
 - ✨ **NEW**: REST API with WebSocket support
@@ -283,31 +175,4 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 - 🔧 **IMPROVED**: Enhanced query engine with ML capabilities
 - 🔧 **IMPROVED**: Automatic directory management
 - 🔧 **IMPROVED**: Cross-platform compatibility
-- 🐛 **FIXED**: Memory optimization and performance improvements
-
-### v2.0.0
-- Initial semantic search implementation
-- Enhanced terminal interface
-- Improved search algorithms
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- Built with modern Python ecosystem and React
-- Semantic search powered by Sentence Transformers
-- UI components inspired by modern design systems
-- Special thanks to the open-source community
-
-## 📞 Support
-
-- 📚 **Documentation**: [docs/](docs/)
-- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/your-username/collective-memory/issues)
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/your-username/collective-memory/discussions)
-- 📧 **Email**: support@collective-memory.dev
-
----
-
-**Made with ❤️ for knowledge workers, researchers, and curious minds.** 
+- 🐛 **FIXED**: Memory optimization and performance improvements 

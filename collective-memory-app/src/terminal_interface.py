@@ -5,6 +5,7 @@ Enhanced semantic search capabilities ile güçlendirilmiş
 """
 
 import os
+import argparse
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
@@ -229,7 +230,7 @@ class TerminalInterface:
             except ValueError:
                 print(f"{Fore.RED}Invalid number{Style.RESET_ALL}")
     
-    def _display_enhanced_results(self, results: List[EnhancedSearchResult], query: EnhancedSearchQuery, save_to_file: Optional[str] = None):
+    def _display_enhanced_results(self, results: List, query, save_to_file: Optional[str] = None):
         """Display enhanced search results with AI scores"""
         
         if not results:
@@ -280,7 +281,7 @@ class TerminalInterface:
         if save_to_file:
             self._save_enhanced_results_to_file(results, query, save_to_file, message)
     
-    def _save_enhanced_results_to_file(self, results: List[EnhancedSearchResult], query: EnhancedSearchQuery, file_path: str, message: str):
+    def _save_enhanced_results_to_file(self, results: List, query, file_path: str, message: str):
         """Save enhanced search results to file"""
         try:
             # Use collective-memory directory for saving
@@ -419,7 +420,7 @@ class TerminalInterface:
                     # Sadece markdown dosyaları
                     if file_path.suffix.lower() in ['.md', '.markdown', '.txt']:
                         try:
-                            file_id = self.db_manager.add_or_update_file(str(file_path))
+                            file_id = self.database_manager.add_or_update_file(str(file_path))
                             if file_id:
                                 indexed_count += 1
                         except Exception as e:
@@ -454,7 +455,7 @@ class TerminalInterface:
         """Dosya değişikliği callback'i"""
         if event_type in ['created', 'modified']:
             try:
-                file_id = self.db_manager.add_or_update_file(src_path)
+                file_id = self.database_manager.add_or_update_file(src_path)
                 if file_id:
                     print(f"{Fore.GREEN}📝 File indexed: {Path(src_path).name}{Style.RESET_ALL}")
             except Exception as e:
@@ -814,8 +815,8 @@ class TerminalInterface:
         if self.file_monitor:
             self.file_monitor.stop_monitoring()
             
-        if self.db_manager:
-            self.db_manager.disconnect()
+        if self.database_manager:
+            self.database_manager.disconnect()
 
 def main():
     """Ana fonksiyon"""

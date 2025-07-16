@@ -9,7 +9,7 @@
 
 ### Core Project Documents
 - **[📋 Project Requirements Document (PRD)](PRD.md)** - Complete project overview and requirements
-- **[🛠️ Technology Stack](techstack.md)** - Complete technology overview and dependencies
+- **[🛠️ Technology Stack](docs/technical/architecture/TECHNOLOGY_STACK.md)** - Complete technology overview and dependencies
 - **[💾 Collective Memory System Guide](collective-memory.md)** - Main system documentation
 - **[📝 Development Todo List](docs/todo.md)** - Current tasks and project roadmap
 - **[🔧 Cursor Rules](.cursor/rules)** - Development standards and coding guidelines

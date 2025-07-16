@@ -572,7 +572,7 @@ related_docs:
 
 #### **Resources**
 - **[📚 Comprehensive Documentation Index](COMPREHENSIVE_DOCUMENTATION_INDEX.md)** - Complete documentation catalog
-- **[🛠️ Technology Stack](techstack.md)** - Technical implementation details
+- **[🛠️ Technology Stack](docs/technical/architecture/TECHNOLOGY_STACK.md)** - Technical implementation details
 - **[💾 Collective Memory Guide](collective-memory.md)** - System overview and usage
 - **[🔧 Cursor Rules](.cursor/rules)** - Development standards and guidelines
 

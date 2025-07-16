@@ -1,154 +1,292 @@
-import { useState, useCallback, useRef } from 'react'
-import { useQuery, useMutation, useQueryClient } from 'react-query'
-import { searchAPI } from '../services/api'
-import { useDebounce } from './useDebounce'
+import { useState, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from 'react-query';
 
+// API base URL
+const API_BASE_URL = 'http://localhost:8000';
+
+// Main search hook
 export const useSearch = () => {
-  const [query, setQuery] = useState('')
+  const [query, setQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
   const [searchOptions, setSearchOptions] = useState({
     semantic: false,
     limit: 50,
-    offset: 0,
-    filters: {}
-  })
-  const [searchHistory, setSearchHistory] = useState(() => {
-    const saved = localStorage.getItem('searchHistory')
-    return saved ? JSON.parse(saved) : []
-  })
+    fileTypes: [],
+    dateRange: null,
+    sortBy: 'relevance'
+  });
+  const [isSearching, setIsSearching] = useState(false);
+  const [lastSearchTime, setLastSearchTime] = useState(null);
 
-  const debouncedQuery = useDebounce(query, 300)
-  const queryClient = useQueryClient()
-  const abortControllerRef = useRef()
+  const queryClient = useQueryClient();
 
-  // Main search query
-  const searchQuery = useQuery(
-    ['search', debouncedQuery, searchOptions],
-    async () => {
-      if (!debouncedQuery.trim()) return { results: [], total: 0 }
-      
-      // Cancel previous request
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort()
+  // Search mutation
+  const searchMutation = useMutation(
+    async ({ query, options = {} }) => {
+      const searchParams = new URLSearchParams({
+        q: query,
+        semantic: options.semantic || false,
+        limit: options.limit || 50,
+        sort_by: options.sortBy || 'relevance'
+      });
+
+      if (options.fileTypes && options.fileTypes.length > 0) {
+        searchParams.append('file_types', options.fileTypes.join(','));
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/search?${searchParams}`);
+      if (!response.ok) {
+        throw new Error('Arama işlemi başarısız');
       }
       
-      // Create new abort controller
-      abortControllerRef.current = new AbortController()
-
-      const searchFunction = searchOptions.semantic 
-        ? searchAPI.semanticSearch 
-        : searchAPI.search
-
-      return await searchFunction(debouncedQuery, {
-        ...searchOptions,
-        signal: abortControllerRef.current.signal
-      })
+      const data = await response.json();
+      return data;
     },
     {
-      enabled: !!debouncedQuery.trim(),
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      cacheTime: 30 * 60 * 1000, // 30 minutes
-      keepPreviousData: true,
+      onMutate: () => {
+        setIsSearching(true);
+      },
       onSuccess: (data) => {
-        if (debouncedQuery.trim() && data.results.length > 0) {
-          addToSearchHistory(debouncedQuery)
+        if (data.success) {
+          setSearchResults(data.results || []);
+          setLastSearchTime(new Date());
         }
       },
       onError: (error) => {
-        if (error.name !== 'AbortError') {
-          console.error('Search error:', error)
-        }
+        console.error('Search error:', error);
+        setSearchResults([]);
+      },
+      onSettled: () => {
+        setIsSearching(false);
       }
     }
-  )
-
-  // Search suggestions
-  const suggestionsQuery = useQuery(
-    ['suggestions', debouncedQuery],
-    () => searchAPI.getSuggestions(debouncedQuery),
-    {
-      enabled: !!debouncedQuery.trim() && debouncedQuery.length > 2,
-      staleTime: 10 * 60 * 1000,
-      cacheTime: 20 * 60 * 1000,
-    }
-  )
+  );
 
   // Export mutation
   const exportMutation = useMutation(
-    ({ query, format }) => searchAPI.exportResults(query, format),
-    {
-      onSuccess: (blob, variables) => {
-        const url = window.URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `search-results-${Date.now()}.${variables.format === 'markdown' ? 'md' : 'txt'}`
-        document.body.appendChild(a)
-        a.click()
-        window.URL.revokeObjectURL(url)
-        document.body.removeChild(a)
+    async ({ query, format = 'markdown', filename }) => {
+      const response = await fetch(`${API_BASE_URL}/api/search/export`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query,
+          format,
+          filename
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Dışa aktarma başarısız');
       }
+
+      // Download the file
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename || `search-results-${Date.now()}.md`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      return { success: true };
     }
-  )
+  );
 
-  // Add query to search history
-  const addToSearchHistory = useCallback((searchQuery) => {
-    if (!searchQuery.trim()) return
+  // Suggestions query
+  const { data: suggestions = [] } = useQuery(
+    ['searchSuggestions', query],
+    async () => {
+      if (!query || query.length < 2) return [];
 
-    setSearchHistory(prev => {
-      const newHistory = [
-        searchQuery,
-        ...prev.filter(item => item !== searchQuery)
-      ].slice(0, 20) // Keep only last 20 searches
+      const response = await fetch(`${API_BASE_URL}/api/search/suggestions?q=${encodeURIComponent(query)}`);
+      if (!response.ok) return [];
+      
+      const data = await response.json();
+      return data.success ? data.suggestions : [];
+    },
+    {
+      enabled: query.length >= 2,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      cacheTime: 10 * 60 * 1000, // 10 minutes
+    }
+  );
 
-      localStorage.setItem('searchHistory', JSON.stringify(newHistory))
-      return newHistory
-    })
-  }, [])
+  // Search history query
+  const { data: searchHistory = [] } = useQuery(
+    'searchHistory',
+    async () => {
+      const response = await fetch(`${API_BASE_URL}/api/search/history`);
+      if (!response.ok) return [];
+      
+      const data = await response.json();
+      return data.success ? data.history : [];
+    },
+    {
+      staleTime: 10 * 60 * 1000, // 10 minutes
+      cacheTime: 30 * 60 * 1000, // 30 minutes
+    }
+  );
 
-  // Clear search history
-  const clearSearchHistory = useCallback(() => {
-    setSearchHistory([])
-    localStorage.removeItem('searchHistory')
-  }, [])
+  // Perform search function
+  const performSearch = useCallback((searchQuery = query, options = searchOptions) => {
+    if (!searchQuery.trim()) return;
+    
+    searchMutation.mutate({ 
+      query: searchQuery, 
+      options 
+    });
+  }, [query, searchOptions, searchMutation]);
+
+  // Export results function
+  const exportResults = useCallback((options = {}) => {
+    const filename = options.filename || `search-${query.replace(/\s+/g, '-')}-${Date.now()}.md`;
+    
+    exportMutation.mutate({
+      query,
+      format: options.format || 'markdown',
+      filename
+    });
+  }, [query, exportMutation]);
 
   // Update search options
   const updateSearchOptions = useCallback((newOptions) => {
-    setSearchOptions(prev => ({ ...prev, ...newOptions }))
-  }, [])
+    setSearchOptions(prev => ({ ...prev, ...newOptions }));
+  }, []);
 
   // Clear search
   const clearSearch = useCallback(() => {
-    setQuery('')
-    setSearchOptions(prev => ({ ...prev, offset: 0 }))
-    queryClient.removeQueries(['search'])
-  }, [queryClient])
+    setQuery('');
+    setSearchResults([]);
+    setLastSearchTime(null);
+  }, []);
 
-  // Load more results
+  // Load more results (pagination)
+  const [canLoadMore, setCanLoadMore] = useState(false);
+  const [totalResults, setTotalResults] = useState(0);
+
   const loadMore = useCallback(() => {
-    if (searchQuery.data && searchQuery.data.results.length < searchQuery.data.total) {
-      setSearchOptions(prev => ({ 
-        ...prev, 
-        offset: prev.offset + prev.limit 
-      }))
+    const currentLimit = searchOptions.limit;
+    updateSearchOptions({ limit: currentLimit + 50 });
+    performSearch();
+  }, [searchOptions.limit, performSearch, updateSearchOptions]);
+
+  return {
+    // State
+    query,
+    setQuery,
+    searchResults,
+    searchOptions,
+    isSearching: searchMutation.isLoading,
+    isExporting: exportMutation.isLoading,
+    lastSearchTime,
+    suggestions,
+    searchHistory,
+    canLoadMore,
+    totalResults,
+    
+    // Actions
+    performSearch,
+    exportResults,
+    updateSearchOptions,
+    clearSearch,
+    loadMore,
+    
+    // Computed
+    hasResults: searchResults.length > 0,
+    searchStats: {
+      resultCount: searchResults.length,
+      searchTime: searchMutation.data?.search_time || 0,
+      totalFiles: searchMutation.data?.total_files || 0
+    },
+    
+    // Error states
+    searchError: searchMutation.error,
+    exportError: exportMutation.error
+  };
+};
+
+// Quick search hook for embedded components
+export const useQuickSearch = () => {
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const searchMutation = useMutation(
+    async (searchQuery) => {
+      const response = await fetch(`${API_BASE_URL}/api/search/quick?q=${encodeURIComponent(searchQuery)}`);
+      if (!response.ok) {
+        throw new Error('Hızlı arama başarısız');
+      }
+      const data = await response.json();
+      return data;
+    },
+    {
+      onMutate: () => setIsLoading(true),
+      onSuccess: (data) => {
+        setResults(data.success ? data.results?.slice(0, 5) || [] : []);
+      },
+      onError: (error) => {
+        console.error('Quick search error:', error);
+        setResults([]);
+      },
+      onSettled: () => setIsLoading(false)
     }
-  }, [searchQuery.data])
+  );
+
+  const performQuickSearch = useCallback((searchQuery) => {
+    if (!searchQuery || searchQuery.length < 2) {
+      setResults([]);
+      return;
+    }
+    searchMutation.mutate(searchQuery);
+  }, [searchMutation]);
 
   return {
     query,
     setQuery,
-    searchOptions,
-    updateSearchOptions,
-    searchResults: searchQuery.data,
-    isSearching: searchQuery.isLoading,
-    searchError: searchQuery.error,
-    suggestions: suggestionsQuery.data,
-    isSuggestionsLoading: suggestionsQuery.isLoading,
-    searchHistory,
-    addToSearchHistory,
-    clearSearchHistory,
-    clearSearch,
-    loadMore,
-    canLoadMore: searchQuery.data && searchQuery.data.results.length < searchQuery.data.total,
-    exportResults: exportMutation.mutate,
-    isExporting: exportMutation.isLoading
-  }
-} 
+    results,
+    isLoading,
+    performQuickSearch,
+    clearResults: () => setResults([])
+  };
+};
+
+// Search analytics hook
+export const useSearchAnalytics = () => {
+  return useQuery(
+    'searchAnalytics',
+    async () => {
+      const response = await fetch(`${API_BASE_URL}/api/analytics/search`);
+      if (!response.ok) return null;
+      
+      const data = await response.json();
+      return data.success ? data.analytics : null;
+    },
+    {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      cacheTime: 15 * 60 * 1000, // 15 minutes
+    }
+  );
+};
+
+// Popular queries hook
+export const usePopularQueries = (limit = 10) => {
+  return useQuery(
+    ['popularQueries', limit],
+    async () => {
+      const response = await fetch(`${API_BASE_URL}/api/analytics/popular-queries?limit=${limit}`);
+      if (!response.ok) return [];
+      
+      const data = await response.json();
+      return data.success ? data.queries : [];
+    },
+    {
+      staleTime: 10 * 60 * 1000, // 10 minutes
+      cacheTime: 30 * 60 * 1000, // 30 minutes
+    }
+  );
+}; 

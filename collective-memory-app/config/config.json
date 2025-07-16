@@ -40,6 +40,35 @@
     "backup_location": "./collective-memory-backups"
   },
   
+  "json_chat_settings": {
+    "enabled": true,
+    "storage_path": ".collective-memory/conversations",
+    "auto_save": true,
+    "backup_interval_hours": 24,
+    "max_conversations_per_project": 1000,
+    "export_formats": ["json", "markdown", "txt"],
+    "compression": {
+      "enabled": false,
+      "format": "gzip"
+    },
+    "indexing": {
+      "enabled": true,
+      "full_text_search": true,
+      "rebuild_interval_hours": 6
+    },
+    "import_settings": {
+      "cursor_auto_import": true,
+      "cursor_import_limit": 100,
+      "merge_duplicates": true
+    },
+    "organization": {
+      "by_date": true,
+      "by_project": true,
+      "by_tags": true,
+      "max_files_per_folder": 100
+    }
+  },
+  
   "file_patterns": {
     "ignore_patterns": [
       "node_modules/**",
@@ -127,5 +156,13 @@
     "enable_caching": true,
     "cache_ttl_hours": 24,
     "experimental_features": false
+  },
+  
+  "ui_settings": {
+    "language": "turkish",
+    "theme": "context7",
+    "date_format": "DD.MM.YYYY",
+    "time_format": "HH:mm",
+    "timezone": "Europe/Istanbul"
   }
 } 

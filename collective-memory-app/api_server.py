@@ -26,10 +26,14 @@ import psutil
 # Import our existing modules
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from src.database_manager import DatabaseManager
-from src.enhanced_query_engine import EnhancedQueryEngine
+from src.enhanced_query_engine import EnhancedQueryEngine, EnhancedSearchQuery
+from src.query_engine import SearchQuery
 from src.content_indexer import ContentIndexer
 from src.file_monitor import DataFolderMonitor
 from src.cursor_reader import EnhancedCursorDatabaseReader
+from src.enterprise_api import enterprise_bp, websocket_handlers
+from chat_api import register_chat_api, ChatAPI
+from src.performance_monitor import get_monitor
 
 # Configure logging
 logging.basicConfig(
@@ -85,6 +89,9 @@ class CollectiveMemoryAPI:
         self.content_indexer = ContentIndexer()
         self.file_monitor = DataFolderMonitor(self.data_folder)
         
+        # Initialize JSON Chat Manager
+        self.chat_api = register_chat_api(self.app, self.data_folder)
+        
         # System stats
         self.start_time = datetime.utcnow()
         self.search_count = 0
@@ -94,46 +101,74 @@ class CollectiveMemoryAPI:
         self._setup_routes()
         self._setup_websocket_events()
         
+        # Register JSON Chat API
+        self._setup_json_chat_api()
+        
         logger.info(f"Collective Memory API initialized for folder: {self.data_folder}")
 
     def _setup_routes(self):
         """Setup all API routes"""
+        
+        # Register enterprise blueprint for Phase 3 features
+        self.app.register_blueprint(enterprise_bp)
         
         # Health check
         @self.app.route('/health', methods=['GET'])
         def health_check():
             return jsonify(APIResponse(success=True, data="OK").__dict__)
         
-        # System endpoints
+        # System Health Monitoring Endpoints
+        @self.app.route('/api/system/health', methods=['GET'])
+        def get_system_health():
+            """Get current system health status"""
+            try:
+                monitor = get_monitor()
+                status = monitor.get_current_status()
+                return jsonify(status)
+            except Exception as e:
+                return jsonify({"error": str(e)}), 500
+
+        @self.app.route('/api/system/metrics', methods=['GET'])
+        def get_system_metrics():
+            """Get system metrics summary"""
+            try:
+                hours = request.args.get('hours', 24, type=int)
+                monitor = get_monitor()
+                summary = monitor.get_metrics_summary(hours=hours)
+                return jsonify(summary)
+            except Exception as e:
+                return jsonify({"error": str(e)}), 500
+
         @self.app.route('/system/status', methods=['GET'])
         def get_system_status():
+            """Get real-time system status for dashboard"""
             try:
-                # Check if indexing is running
-                is_indexing = hasattr(self.file_monitor, '_indexing') and self.file_monitor._indexing
+                monitor = get_monitor()
+                status = monitor.get_current_status()
                 
-                # Get basic stats
-                file_count = self.db_manager.get_total_file_count()
-                
-                # Determine system health
-                status = 'healthy'
-                if is_indexing:
-                    status = 'indexing'
-                
-                data = {
-                    'status': status,
-                    'uptime': str(datetime.utcnow() - self.start_time),
-                    'file_count': file_count,
-                    'last_search': self.last_search_time.isoformat() if self.last_search_time else None,
-                    'search_count': self.search_count,
-                    'is_indexing': is_indexing,
-                    'notifications': 0
+                # Enhanced status for dashboard
+                dashboard_status = {
+                    "timestamp": datetime.now().isoformat(),
+                    "overall_health": status.get("status", "unknown"),
+                    "health_score": status.get("health_score", 0),
+                    "system": {
+                        "cpu_percent": status["system_metrics"]["cpu_percent"],
+                        "memory_percent": status["system_metrics"]["memory_percent"],
+                        "disk_free_gb": status["system_metrics"]["disk_free_gb"],
+                        "python_memory_mb": status["system_metrics"]["python_memory_mb"]
+                    },
+                    "application": {
+                        "uptime_hours": round(status.get("uptime_hours", 0), 1),
+                        "search_requests": status["app_metrics"]["search_requests_count"],
+                        "avg_response_time": status["app_metrics"]["api_response_time_avg"],
+                        "error_count": status["app_metrics"]["error_count"]
+                    },
+                    "issues": status.get("issues", [])
                 }
                 
-                return jsonify(APIResponse(success=True, data=data).__dict__)
-                
+                return jsonify(dashboard_status)
             except Exception as e:
-                logger.error(f"Error getting system status: {e}")
-                return jsonify(APIResponse(success=False, error=str(e)).__dict__), 500
+                return jsonify({"error": str(e), "status": "error"}), 500
 
         @self.app.route('/system/stats', methods=['GET'])
         def get_system_stats():
@@ -248,10 +283,15 @@ class CollectiveMemoryAPI:
                 search_start = datetime.utcnow()
                 
                 # Perform search
-                if semantic and hasattr(self.query_engine, 'semantic_search'):
-                    results = self.query_engine.semantic_search(query, limit=limit, offset=offset)
-                else:
-                    results = self.query_engine.search(query, limit=limit, offset=offset)
+                from src.query_engine import SearchQuery
+                
+                search_query = SearchQuery(
+                    text=query,
+                    limit=limit,
+                    sort_by="relevance"
+                )
+                
+                results = self.query_engine.search(search_query)
                 
                 # Calculate search time
                 search_time = (datetime.utcnow() - search_start).total_seconds() * 1000
@@ -279,6 +319,49 @@ class CollectiveMemoryAPI:
                     'searchTime': f"{search_time:.0f}ms",
                     'semantic': semantic
                 }
+                
+                # Add prompt to database and get related prompts
+                try:
+                    search_type = 'semantic' if semantic else 'basic'
+                    user_session = request.headers.get('X-Session-ID', 'anonymous')
+                    
+                    # Save current prompt
+                    prompt_id = self.db_manager.add_prompt(
+                        prompt_text=query,
+                        search_type=search_type,
+                        results_count=len(formatted_results),
+                        response_time_ms=int(search_time),
+                        user_session=user_session
+                    )
+                    
+                    # Get similar prompts for context suggestions
+                    similar_prompts = self.db_manager.get_similar_prompts(
+                        prompt_text=query,
+                        limit=3,
+                        similarity_threshold=0.6
+                    )
+                    
+                    # Get context suggestions
+                    context_suggestions = self.db_manager.get_prompt_context_suggestions(
+                        current_prompt=query,
+                        limit=3
+                    )
+                    
+                    # Add prompt relationship data to response
+                    response_data['promptRelationships'] = {
+                        'promptId': prompt_id,
+                        'similarPrompts': similar_prompts,
+                        'contextSuggestions': context_suggestions
+                    }
+                    
+                except Exception as e:
+                    logger.warning(f"Prompt tracking failed: {e}")
+                    # Don't fail the search if prompt tracking fails
+                    response_data['promptRelationships'] = {
+                        'promptId': None,
+                        'similarPrompts': [],
+                        'contextSuggestions': []
+                    }
                 
                 # Emit WebSocket event
                 self.socketio.emit('search_performed', {
@@ -319,39 +402,155 @@ class CollectiveMemoryAPI:
         def export_search_results():
             try:
                 data = request.get_json()
-                query = data.get('query', '')
-                format_type = data.get('format', 'markdown')
+                query = data.get('query', '').strip()
+                format_type = data.get('format', 'markdown').lower()
                 
                 if not query:
                     return jsonify(APIResponse(success=False, error='Query is required').__dict__), 400
                 
                 # Perform search
-                results = self.query_engine.search(query, limit=1000)
+                results = self.query_engine.search(query)
                 
                 # Generate export content
                 if format_type == 'markdown':
                     content = self._generate_markdown_export(query, results)
-                    filename = f"search-results-{datetime.now().strftime('%Y%m%d-%H%M%S')}.md"
-                    mimetype = 'text/markdown'
-                else:
+                    filename = f"search-results-{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.md"
+                elif format_type == 'text':
                     content = self._generate_text_export(query, results)
-                    filename = f"search-results-{datetime.now().strftime('%Y%m%d-%H%M%S')}.txt"
-                    mimetype = 'text/plain'
+                    filename = f"search-results-{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.txt"
+                else:
+                    return jsonify(APIResponse(success=False, error='Invalid format. Use "markdown" or "text"').__dict__), 400
                 
-                # Create in-memory file
-                output = io.BytesIO()
-                output.write(content.encode('utf-8'))
-                output.seek(0)
+                # Return file content
+                response_data = {
+                    'content': content,
+                    'filename': filename,
+                    'query': query,
+                    'results_count': len(results),
+                    'format': format_type
+                }
                 
-                return send_file(
-                    output,
-                    as_attachment=True,
-                    download_name=filename,
-                    mimetype=mimetype
-                )
+                return jsonify(APIResponse(success=True, data=response_data).__dict__)
                 
             except Exception as e:
                 logger.error(f"Error exporting search results: {e}")
+                return jsonify(APIResponse(success=False, error=str(e)).__dict__), 500
+
+        # Prompt relationship endpoints
+        @self.app.route('/prompts', methods=['POST'])
+        def add_prompt():
+            try:
+                data = request.get_json()
+                prompt_text = data.get('prompt_text', '').strip()
+                search_type = data.get('search_type', 'basic')
+                results_count = data.get('results_count', 0)
+                response_time_ms = data.get('response_time_ms', 0)
+                context_preserved = data.get('context_preserved')
+                user_session = data.get('user_session')
+                
+                if not prompt_text:
+                    return jsonify(APIResponse(success=False, error='Prompt text is required').__dict__), 400
+                
+                # Add prompt to database
+                prompt_id = self.db_manager.add_prompt(
+                    prompt_text=prompt_text,
+                    search_type=search_type,
+                    results_count=results_count,
+                    response_time_ms=response_time_ms,
+                    context_preserved=context_preserved,
+                    user_session=user_session
+                )
+                
+                if prompt_id:
+                    response_data = {
+                        'prompt_id': prompt_id,
+                        'message': 'Prompt added successfully'
+                    }
+                    return jsonify(APIResponse(success=True, data=response_data).__dict__)
+                else:
+                    return jsonify(APIResponse(success=False, error='Failed to add prompt').__dict__), 500
+                
+            except Exception as e:
+                logger.error(f"Error adding prompt: {e}")
+                return jsonify(APIResponse(success=False, error=str(e)).__dict__), 500
+
+        @self.app.route('/prompts/similar', methods=['GET'])
+        def get_similar_prompts():
+            try:
+                prompt_text = request.args.get('prompt', '').strip()
+                limit = min(int(request.args.get('limit', 5)), 20)
+                threshold = float(request.args.get('threshold', 0.6))
+                
+                if not prompt_text:
+                    return jsonify(APIResponse(success=False, error='Prompt parameter is required').__dict__), 400
+                
+                # Get similar prompts
+                similar_prompts = self.db_manager.get_similar_prompts(
+                    prompt_text=prompt_text,
+                    limit=limit,
+                    similarity_threshold=threshold
+                )
+                
+                response_data = {
+                    'query_prompt': prompt_text,
+                    'similar_prompts': similar_prompts,
+                    'count': len(similar_prompts)
+                }
+                
+                return jsonify(APIResponse(success=True, data=response_data).__dict__)
+                
+            except Exception as e:
+                logger.error(f"Error getting similar prompts: {e}")
+                return jsonify(APIResponse(success=False, error=str(e)).__dict__), 500
+
+        @self.app.route('/prompts/<int:prompt_id>/related', methods=['GET'])
+        def get_related_prompts(prompt_id):
+            try:
+                limit = min(int(request.args.get('limit', 5)), 20)
+                
+                # Get related prompts
+                related_prompts = self.db_manager.get_related_prompts(
+                    prompt_id=prompt_id,
+                    limit=limit
+                )
+                
+                response_data = {
+                    'prompt_id': prompt_id,
+                    'related_prompts': related_prompts,
+                    'count': len(related_prompts)
+                }
+                
+                return jsonify(APIResponse(success=True, data=response_data).__dict__)
+                
+            except Exception as e:
+                logger.error(f"Error getting related prompts: {e}")
+                return jsonify(APIResponse(success=False, error=str(e)).__dict__), 500
+
+        @self.app.route('/prompts/context-suggestions', methods=['GET'])
+        def get_context_suggestions():
+            try:
+                current_prompt = request.args.get('prompt', '').strip()
+                limit = min(int(request.args.get('limit', 3)), 10)
+                
+                if not current_prompt:
+                    return jsonify(APIResponse(success=False, error='Prompt parameter is required').__dict__), 400
+                
+                # Get context suggestions
+                suggestions = self.db_manager.get_prompt_context_suggestions(
+                    current_prompt=current_prompt,
+                    limit=limit
+                )
+                
+                response_data = {
+                    'current_prompt': current_prompt,
+                    'suggestions': suggestions,
+                    'count': len(suggestions)
+                }
+                
+                return jsonify(APIResponse(success=True, data=response_data).__dict__)
+                
+            except Exception as e:
+                logger.error(f"Error getting context suggestions: {e}")
                 return jsonify(APIResponse(success=False, error=str(e)).__dict__), 500
 
         # Configuration endpoints
@@ -440,6 +639,10 @@ class CollectiveMemoryAPI:
             room = data.get('room', 'general')
             leave_room(room)
             emit('left_room', {'room': room})
+        
+        # Enterprise WebSocket handlers for Phase 3
+        for event_name, handler in websocket_handlers.items():
+            self.socketio.on(event_name)(handler)
 
     def _get_index_size(self) -> float:
         """Calculate total index size in MB"""

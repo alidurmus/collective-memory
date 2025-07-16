@@ -6,16 +6,13 @@ Flask REST API ve WebSocket testleri
 
 import pytest
 import requests
-import json
 import time
-import tempfile
-import os
-from pathlib import Path
 import socketio
 
 # Test configuration
-BASE_URL = "http://localhost:5000"
+BASE_URL = "http://localhost:8000"
 API_TIMEOUT = 30
+
 
 class TestAPIEndpoints:
     """API endpoint testleri"""
@@ -36,11 +33,11 @@ class TestAPIEndpoints:
         assert response.status_code == 200
         
         data = response.json()
-        assert "status" in data
-        assert data["status"] == "running"
-        assert "memory_usage" in data
-        assert "disk_usage" in data
-        assert "uptime" in data
+        assert "success" in data
+        assert "data" in data
+        assert data["success"] is True
+        assert "file_count" in data["data"]
+        assert "is_indexing" in data["data"]
         
     def test_system_stats(self):
         """System stats endpoint testi"""

@@ -5,43 +5,37 @@ Veritabanından gelişmiş arama ve filtreleme işlemleri yapar
 """
 
 import re
-import json
-from datetime import datetime, timedelta
-from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Any, Union
+from datetime import datetime
+from typing import Dict, List, Optional, Tuple
 from colorama import init, Fore, Style
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 # Colorama initialize
 init()
+
 
 @dataclass
 class SearchQuery:
     """Arama sorgusu veri yapısı"""
     text: str = ""
-    keywords: List[str] = None
-    file_types: List[str] = None
+    keywords: List[str] = field(default_factory=list)
+    file_types: List[str] = field(default_factory=list)
     date_from: Optional[datetime] = None
     date_to: Optional[datetime] = None
     content_type: Optional[str] = None
     min_size: Optional[int] = None
     max_size: Optional[int] = None
-    include_paths: List[str] = None
-    exclude_paths: List[str] = None
+    include_paths: List[str] = field(default_factory=list)
+    exclude_paths: List[str] = field(default_factory=list)
     sort_by: str = "relevance"  # relevance, date, size, name
     sort_order: str = "desc"  # asc, desc
     limit: int = 50
+    use_semantic_search: bool = False  # Semantic search option
     
     def __post_init__(self):
-        if self.keywords is None:
-            self.keywords = []
-        if self.file_types is None:
-            self.file_types = []
-        if self.include_paths is None:
-            self.include_paths = []
-        if self.exclude_paths is None:
-            self.exclude_paths = []
+        # No longer needed since we use field(default_factory=list)
+        pass
 
 @dataclass
 class SearchResult:

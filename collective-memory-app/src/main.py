@@ -241,6 +241,14 @@ def main():
         print(f"{Fore.YELLOW}🔍 Query System Mode - Enhanced Features Active{Style.RESET_ALL}")
         print()
     
+    # Start system health monitoring
+    try:
+        from performance_monitor import start_system_monitoring
+        start_system_monitoring(data_path=args.data_path, interval=60)
+        print(f"{Fore.GREEN}📊 System health monitoring started{Style.RESET_ALL}")
+    except ImportError:
+        print(f"{Fore.YELLOW}⚠️  Performance monitoring not available{Style.RESET_ALL}")
+    
     # Çalıştır
     success = app.run(args)
     sys.exit(0 if success else 1)
