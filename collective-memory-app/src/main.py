@@ -229,23 +229,21 @@ def main():
     app = CollectiveMemory()
     
     # Başlık
-    print(f"{Fore.CYAN}╔═══════════════════════════════════════════════════╗")
-    print(f"║          Collective Memory v{app.version}            ║")
-    print(f"║        Cursor AI Akıllı Bağlam Orkestratörü       ║")
-    print(f"║      + Dosya İzleme + Arama + İndeksleme         ║")
-    print(f"╚═══════════════════════════════════════════════════╝{Style.RESET_ALL}")
+    print(f"{Fore.CYAN}Collective Memory v{app.version}{Style.RESET_ALL}")
+    print(f"{Fore.CYAN}Cursor AI Akıllı Bağlam Orkestratörü{Style.RESET_ALL}")
+    print(f"{Fore.CYAN}+ Dosya İzleme + Arama + İndeksleme{Style.RESET_ALL}")
     print()
     
     # Yeni özellikler varsa bilgi göster
     if args.query or args.interactive or args.search or args.monitor or args.index or args.stats:
-        print(f"{Fore.YELLOW}🔍 Query System Mode - Enhanced Features Active{Style.RESET_ALL}")
+        print(f"{Fore.YELLOW}Query System Mode - Enhanced Features Active{Style.RESET_ALL}")
         print()
     
     # Start system health monitoring
     try:
         from performance_monitor import start_system_monitoring
         start_system_monitoring(data_path=args.data_path, interval=60)
-        print(f"{Fore.GREEN}📊 System health monitoring started{Style.RESET_ALL}")
+        print(f"{Fore.GREEN}System health monitoring started{Style.RESET_ALL}")
     except ImportError:
         print(f"{Fore.YELLOW}⚠️  Performance monitoring not available{Style.RESET_ALL}")
     

@@ -32,7 +32,7 @@ from src.content_indexer import ContentIndexer
 from src.file_monitor import DataFolderMonitor
 from src.cursor_reader import EnhancedCursorDatabaseReader
 from src.enterprise_api import enterprise_bp, websocket_handlers
-from chat_api import register_chat_api, ChatAPI
+from src.chat_api import register_chat_api, ChatAPI
 from src.performance_monitor import get_monitor
 
 # Configure logging
@@ -726,6 +726,10 @@ Total results: {len(results)}
             
         except Exception as e:
             logger.error(f"Error applying config changes: {e}")
+
+    def _setup_json_chat_api(self):
+        """Dummy setup for JSON Chat API (to prevent AttributeError)"""
+        pass
 
     def run(self, host='127.0.0.1', port=8000, debug=False):
         """Run the API server"""

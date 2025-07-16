@@ -1,15 +1,15 @@
 {
   "system_metrics": [
     {
-      "timestamp": "2025-07-15T10:48:45.447568",
-      "cpu_percent": 42.9,
-      "memory_percent": 82.8,
-      "memory_used_gb": 13.116405487060547,
-      "disk_usage_percent": 90.1,
-      "disk_free_gb": 47.1549186706543,
-      "active_connections": 175,
-      "process_count": 360,
-      "python_memory_mb": 402.14453125,
+      "timestamp": "2025-07-16T13:24:26.260504",
+      "cpu_percent": 49.5,
+      "memory_percent": 82.3,
+      "memory_used_gb": 13.038986206054688,
+      "disk_usage_percent": 89.4,
+      "disk_free_gb": 50.59872817993164,
+      "active_connections": 173,
+      "process_count": 369,
+      "python_memory_mb": 401.44140625,
       "load_average": [
         0.0,
         0.0,
@@ -19,7 +19,7 @@
   ],
   "app_metrics": [
     {
-      "timestamp": "2025-07-15T10:48:46.454629",
+      "timestamp": "2025-07-16T13:24:27.268648",
       "search_requests_count": 0,
       "api_response_time_avg": 0.0,
       "database_connections": 1,
@@ -29,5 +29,5 @@
       "uptime_seconds": 2
     }
   ],
-  "last_updated": "2025-07-15T10:48:46.454674"
+  "last_updated": "2025-07-16T13:24:27.268697"
 }

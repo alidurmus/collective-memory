@@ -9,7 +9,6 @@ import argparse
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
-from colorama import init, Fore, Style
 
 # Core imports
 from database_manager import DatabaseManager
@@ -25,10 +24,7 @@ try:
     ENHANCED_AVAILABLE = True
 except ImportError:
     ENHANCED_AVAILABLE = False
-    print("⚠️  Enhanced query engine not available. Using basic search.")
-
-# Initialize colorama
-init()
+    print("Enhanced query engine not available. Using basic search.")
 
 
 class TerminalInterface:
@@ -55,11 +51,11 @@ class TerminalInterface:
         if ENHANCED_AVAILABLE:
             self.query_engine = EnhancedQueryEngine(self.database_manager)
             self.use_enhanced = True
-            print(f"{Fore.GREEN}🚀 Enhanced semantic search enabled{Style.RESET_ALL}")
+            print("Enhanced semantic search enabled")
         else:
             self.query_engine = QueryEngine(self.database_manager)
             self.use_enhanced = False
-            print(f"{Fore.YELLOW}⚠️  Using basic search mode{Style.RESET_ALL}")
+            print("Using basic search mode")
         
         self.max_results_display = 20
         
@@ -70,12 +66,12 @@ class TerminalInterface:
     
     def interactive_mode(self):
         """İnteraktif mod - Enhanced features ile"""
-        print(f"\n{Fore.CYAN}🧠 Collective Memory Interactive Search{Style.RESET_ALL}")
-        print(f"📁 Data Path: {self.data_path}")
+        print("\nCollective Memory Interactive Search")
+        print(f"Data Path: {self.data_path}")
         if self.use_enhanced:
-            print(f"{Fore.GREEN}🤖 AI-Powered Semantic Search: Enabled{Style.RESET_ALL}")
-        print(f"💾 Database: {self.db_path}")
-        print(f"\n{Fore.YELLOW}Commands:{Style.RESET_ALL}")
+            print("AI-Powered Semantic Search: Enabled")
+        print(f"Database: {self.db_path}")
+        print("\nCommands:")
         print("  help          - Show help")
         print("  stats         - Show database statistics") 
         print("  search <term> - Search for content")
@@ -89,7 +85,7 @@ class TerminalInterface:
         
         while True:
             try:
-                user_input = input(f"{Fore.GREEN}search> {Style.RESET_ALL}").strip()
+                user_input = input("search> ").strip()
                 
                 if not user_input:
                     continue
@@ -99,7 +95,7 @@ class TerminalInterface:
                 args = parts[1] if len(parts) > 1 else ""
                 
                 if command == "quit" or command == "exit":
-                    print(f"\n{Fore.CYAN}👋 Goodbye!{Style.RESET_ALL}")
+                    print("\nGoodbye!")
                     break
                 elif command == "help":
                     self._show_help()
@@ -111,40 +107,40 @@ class TerminalInterface:
                         results = self.query_engine.search(query)
                         self._display_search_results(results, query)
                     else:
-                        print(f"{Fore.RED}❌ Please provide search terms{Style.RESET_ALL}")
+                        print("Please provide search terms")
                 elif command == "semantic" and self.use_enhanced:
                     if args:
                         self._perform_semantic_search(args)
                     else:
-                        print(f"{Fore.RED}❌ Please provide search terms{Style.RESET_ALL}")
+                        print("Please provide search terms")
                 elif command == "intent" and self.use_enhanced:
                     if args:
                         self._analyze_query_intent(args)
                     else:
-                        print(f"{Fore.RED}❌ Please provide a query{Style.RESET_ALL}")
+                        print("Please provide a query")
                 elif command == "suggestions" and self.use_enhanced:
                     if args:
                         self._show_semantic_suggestions(args)
                     else:
-                        print(f"{Fore.RED}❌ Please provide a term{Style.RESET_ALL}")
+                        print("Please provide a term")
                 elif command == "settings" and self.use_enhanced:
                     self._show_search_settings()
                 else:
-                    print(f"{Fore.RED}❌ Unknown command: {command}. Type 'help' for available commands.{Style.RESET_ALL}")
+                    print(f"Unknown command: {command}. Type 'help' for available commands.")
                     
             except KeyboardInterrupt:
-                print(f"\n\n{Fore.CYAN}👋 Goodbye!{Style.RESET_ALL}")
+                print("\n\nGoodbye!")
                 break
             except Exception as e:
-                print(f"{Fore.RED}❌ Error: {e}{Style.RESET_ALL}")
+                print(f"Error: {e}")
     
     def _perform_semantic_search(self, query_text: str):
         """Perform enhanced semantic search"""
         if not self.use_enhanced:
-            print(f"{Fore.RED}❌ Enhanced search not available{Style.RESET_ALL}")
+            print("Enhanced search not available")
             return
         
-        print(f"\n{Fore.CYAN}🧠 Semantic Search: '{query_text}'{Style.RESET_ALL}")
+        print(f"\nSemantic Search: '{query_text}'")
         
         # Create enhanced query
         query = EnhancedSearchQuery(
@@ -157,7 +153,7 @@ class TerminalInterface:
         
         # Analyze intent first
         intent = self.query_engine.analyze_query_intent(query_text)
-        print(f"🎯 Detected Intent: {intent}")
+        print(f"Detected Intent: {intent}")
         
         # Perform search
         results = self.query_engine.search(query)
@@ -166,59 +162,59 @@ class TerminalInterface:
     def _analyze_query_intent(self, query_text: str):
         """Analyze and display query intent"""
         if not self.use_enhanced:
-            print(f"{Fore.RED}❌ Enhanced features not available{Style.RESET_ALL}")
+            print("Enhanced features not available")
             return
         
         intent = self.query_engine.analyze_query_intent(query_text)
-        print(f"\n{Fore.CYAN}🎯 Query Intent Analysis{Style.RESET_ALL}")
+        print("\nQuery Intent Analysis")
         print(f"Query: '{query_text}'")
-        print(f"Detected Intent: {Fore.GREEN}{intent}{Style.RESET_ALL}")
+        print(f"Detected Intent: {intent}")
         
         # Provide intent-specific suggestions
         if intent == 'explain':
-            print(f"{Fore.YELLOW}💡 Tip: Looking for explanatory content. Try semantic search for better results.{Style.RESET_ALL}")
+            print("Tip: Looking for explanatory content. Try semantic search for better results.")
         elif intent == 'find':
-            print(f"{Fore.YELLOW}💡 Tip: Searching for specific items. Consider using filters for better results.{Style.RESET_ALL}")
+            print("Tip: Searching for specific items. Consider using filters for better results.")
         elif intent == 'list':
-            print(f"{Fore.YELLOW}💡 Tip: Looking for comprehensive lists. Try broader search terms.{Style.RESET_ALL}")
+            print("Tip: Looking for comprehensive lists. Try broader search terms.")
         elif intent == 'compare':
-            print(f"{Fore.YELLOW}💡 Tip: Comparing concepts. Use semantic search to find related content.{Style.RESET_ALL}")
+            print("Tip: Comparing concepts. Use semantic search to find related content.")
     
     def _show_semantic_suggestions(self, query_text: str):
         """Show semantic query suggestions"""
         if not self.use_enhanced:
-            print(f"{Fore.RED}❌ Enhanced features not available{Style.RESET_ALL}")
+            print("Enhanced features not available")
             return
         
         suggestions = self.query_engine.get_semantic_suggestions(query_text, limit=5)
         
-        print(f"\n{Fore.CYAN}💡 Semantic Suggestions for '{query_text}'{Style.RESET_ALL}")
+        print(f"\nSemantic Suggestions for '{query_text}'")
         if suggestions:
             for i, suggestion in enumerate(suggestions, 1):
                 print(f"  {i}. {suggestion}")
         else:
-            print(f"{Fore.YELLOW}No suggestions available{Style.RESET_ALL}")
+            print("No suggestions available")
     
     def _show_search_settings(self):
         """Show and allow modification of search settings"""
-        print(f"\n{Fore.CYAN}⚙️  Search Settings{Style.RESET_ALL}")
-        print(f"1. Semantic Search: {Fore.GREEN if self.semantic_search_enabled else Fore.RED}{'Enabled' if self.semantic_search_enabled else 'Disabled'}{Style.RESET_ALL}")
-        print(f"2. AI Scoring: {Fore.GREEN if self.ai_scoring_enabled else Fore.RED}{'Enabled' if self.ai_scoring_enabled else 'Disabled'}{Style.RESET_ALL}")
-        print(f"3. Entity Extraction: {Fore.GREEN if self.entity_extraction_enabled else Fore.RED}{'Enabled' if self.entity_extraction_enabled else 'Disabled'}{Style.RESET_ALL}")
+        print("\nSearch Settings")
+        print(f"1. Semantic Search: {'Enabled' if self.semantic_search_enabled else 'Disabled'}")
+        print(f"2. AI Scoring: {'Enabled' if self.ai_scoring_enabled else 'Disabled'}")
+        print(f"3. Entity Extraction: {'Enabled' if self.entity_extraction_enabled else 'Disabled'}")
         print(f"4. Max Results: {self.max_results_display}")
         
-        print(f"\n{Fore.YELLOW}Toggle settings by typing number (1-4) or press Enter to continue:{Style.RESET_ALL}")
+        print("\nToggle settings by typing number (1-4) or press Enter to continue:")
         choice = input().strip()
         
         if choice == "1":
             self.semantic_search_enabled = not self.semantic_search_enabled
-            print(f"Semantic Search: {Fore.GREEN if self.semantic_search_enabled else Fore.RED}{'Enabled' if self.semantic_search_enabled else 'Disabled'}{Style.RESET_ALL}")
+            print(f"Semantic Search: {'Enabled' if self.semantic_search_enabled else 'Disabled'}")
         elif choice == "2":
             self.ai_scoring_enabled = not self.ai_scoring_enabled
-            print(f"AI Scoring: {Fore.GREEN if self.ai_scoring_enabled else Fore.RED}{'Enabled' if self.ai_scoring_enabled else 'Disabled'}{Style.RESET_ALL}")
+            print(f"AI Scoring: {'Enabled' if self.ai_scoring_enabled else 'Disabled'}")
         elif choice == "3":
             self.entity_extraction_enabled = not self.entity_extraction_enabled
-            print(f"Entity Extraction: {Fore.GREEN if self.entity_extraction_enabled else Fore.RED}{'Enabled' if self.entity_extraction_enabled else 'Disabled'}{Style.RESET_ALL}")
+            print(f"Entity Extraction: {'Enabled' if self.entity_extraction_enabled else 'Disabled'}")
         elif choice == "4":
             try:
                 new_max = int(input("Enter new max results (10-100): "))
@@ -226,56 +222,56 @@ class TerminalInterface:
                     self.max_results_display = new_max
                     print(f"Max Results set to: {new_max}")
                 else:
-                    print(f"{Fore.RED}Please enter a number between 10 and 100{Style.RESET_ALL}")
+                    print("Please enter a number between 10 and 100")
             except ValueError:
-                print(f"{Fore.RED}Invalid number{Style.RESET_ALL}")
+                print("Invalid number")
     
     def _display_enhanced_results(self, results: List, query, save_to_file: Optional[str] = None):
         """Display enhanced search results with AI scores"""
         
         if not results:
-            message = "📭 No results found"
-            print(f"{Fore.YELLOW}{message}{Style.RESET_ALL}")
+            message = "No results found"
+            print(message)
             if save_to_file:
                 self._save_results_to_file([], query, save_to_file, message)
             return
             
-        message = f"✅ Found {len(results)} results with AI-powered scoring"
-        print(f"\n{Fore.GREEN}{message}{Style.RESET_ALL}")
+        message = f"Found {len(results)} results with AI-powered scoring"
+        print(f"\n{message}")
         
         # Display results with enhanced information
         for i, result in enumerate(results[:self.max_results_display], 1):
-            print(f"\n{Fore.CYAN}📄 {i}. {result.file_name}{Style.RESET_ALL}")
-            print(f"   📁 {result.file_path}")
-            print(f"   📊 Size: {self._format_file_size(result.file_size)} | Modified: {result.modified_at}")
+            print(f"\n {i}. {result.file_name}")
+            print(f"   {result.file_path}")
+            print(f"   Size: {self._format_file_size(result.file_size)} | Modified: {result.modified_at}")
             
             # Enhanced scoring information
             if self.use_enhanced:
-                print(f"   🎯 Relevance: {result.relevance_score:.2f} | Semantic: {result.semantic_score:.2f}")
-                print(f"   🤖 AI Scores - Quality: {result.content_quality_score:.2f} | Freshness: {result.freshness_score:.2f}")
+                print(f"   Relevance: {result.relevance_score:.2f} | Semantic: {result.semantic_score:.2f}")
+                print(f"   AI Scores - Quality: {result.content_quality_score:.2f} | Freshness: {result.freshness_score:.2f}")
                 
                 # Show detected entities if available
                 if result.detected_entities:
                     entities_str = ", ".join(result.detected_entities[:5])
-                    print(f"   🏷️  Entities: {entities_str}")
+                    print(f"   Entities: {entities_str}")
                 
                 # Show contextual snippets
                 if result.contextual_snippets:
-                    print(f"   📝 Context: {result.contextual_snippets[0][:100]}...")
+                    print(f"   Context: {result.contextual_snippets[0][:100]}...")
             
             # Show highlights
             if result.match_highlights:
                 highlights_str = " | ".join(result.match_highlights[:3])
-                print(f"   ✨ Highlights: {highlights_str}")
+                print(f"   Highlights: {highlights_str}")
             
             # Show content preview
             preview = result.content_preview[:150] + "..." if len(result.content_preview) > 150 else result.content_preview
-            print(f"   📖 Preview: {preview}")
+            print(f"   Preview: {preview}")
         
         # Show additional results info
         if len(results) > self.max_results_display:
             remaining = len(results) - self.max_results_display
-            print(f"\n{Fore.YELLOW}📄 {remaining} more results available. Use settings to show more.{Style.RESET_ALL}")
+            print(f"\n {remaining} more results available. Use settings to show more.")
         
         # Save to file if requested
         if save_to_file:
@@ -290,21 +286,21 @@ class TerminalInterface:
             
             with open(file_path, 'w', encoding='utf-8') as f:
                 # Write header
-                f.write(f"# 🧠 Enhanced Search Results\n\n")
+                f.write(f"# Enhanced Search Results\n\n")
                 f.write(f"**Query:** {query.text}\n")
                 f.write(f"**Date:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
                 f.write(f"**Results:** {len(results)}\n")
                 f.write(f"**Mode:** AI-Powered Semantic Search\n\n")
                 
                 # Write settings
-                f.write(f"## ⚙️ Search Settings\n\n")
-                f.write(f"- Semantic Search: {'✅' if query.use_semantic_search else '❌'}\n")
-                f.write(f"- AI Scoring: {'✅' if query.use_ai_scoring else '❌'}\n")
-                f.write(f"- Entity Extraction: {'✅' if query.extract_entities else '❌'}\n")
+                f.write(f"## Search Settings\n\n")
+                f.write(f"- Semantic Search: {'Enabled' if query.use_semantic_search else 'Disabled'}\n")
+                f.write(f"- AI Scoring: {'Enabled' if query.use_ai_scoring else 'Disabled'}\n")
+                f.write(f"- Entity Extraction: {'Enabled' if query.extract_entities else 'Disabled'}\n")
                 f.write(f"- Similarity Threshold: {query.semantic_similarity_threshold}\n\n")
                 
                 # Write results
-                f.write(f"## 📊 Results\n\n")
+                f.write(f"## Results\n\n")
                 for i, result in enumerate(results, 1):
                     f.write(f"### {i}. {result.file_name}\n\n")
                     f.write(f"- **Path:** `{result.file_path}`\n")
@@ -333,35 +329,35 @@ class TerminalInterface:
                     
                     f.write(f"---\n\n")
             
-            print(f"\n{Fore.GREEN}💾 Enhanced results saved to: {file_path}{Style.RESET_ALL}")
+            print(f"\nEnhanced results saved to: {file_path}")
             
         except Exception as e:
-            print(f"\n{Fore.RED}❌ Failed to save results: {e}{Style.RESET_ALL}")
+            print(f"\nFailed to save results: {e}")
 
     def _show_help(self):
         """Yardım mesajını gösterir"""
         help_text = f"""
-{Fore.CYAN}📖 Collective Memory Query System - Help{Style.RESET_ALL}
+Collective Memory Query System - Help
 
-{Fore.YELLOW}Basic Search:{Style.RESET_ALL}
+Basic Search:
   search <term>           - Simple text search
   find <term>             - Alias for search
   <term>                  - Direct search (no command needed)
 
-{Fore.YELLOW}Advanced Search:{Style.RESET_ALL}
+Advanced Search:
   search -k keyword1,keyword2    - Search by keywords
   search -t md,txt               - Search specific file types
   search -d 7                    - Files modified in last 7 days
   search -s 1000                 - Files larger than 1000 bytes
   search -p docs/                - Search in specific path
 
-{Fore.YELLOW}Filters:{Style.RESET_ALL}
+Filters:
   search "exact phrase"          - Exact phrase matching
   search term -x exclude_path    - Exclude specific paths
   search term --sort date        - Sort by date/size/name/relevance
   search term --limit 10         - Limit results
 
-{Fore.YELLOW}System Commands:{Style.RESET_ALL}
+System Commands:
   help                   - Show this help
   stats                  - Show system statistics
   index                  - Reindex all files
@@ -369,7 +365,7 @@ class TerminalInterface:
   cursor_history [--limit=N] [--workspaces]  - Cursor chat geçmişini göster
   quit/exit/q            - Exit program
 
-{Fore.YELLOW}Examples:{Style.RESET_ALL}
+Examples:
   search Context7                    - Find files containing "Context7"
   search -k todo,implementation      - Find files with specific keywords
   search -t md -d 3                  - Markdown files from last 3 days
@@ -379,37 +375,37 @@ class TerminalInterface:
         
     def _show_statistics(self):
         """Sistem istatistiklerini gösterir"""
-        print(f"\n{Fore.CYAN}📊 System Statistics{Style.RESET_ALL}")
+        print("\nSystem Statistics")
         
         try:
             stats = self.query_engine.get_search_statistics()
             
             if not stats:
-                print(f"{Fore.YELLOW}⚠️  No statistics available{Style.RESET_ALL}")
+                print("No statistics available")
                 return
                 
-            print(f"  📁 Total files: {stats.get('total_files', 0)}")
+            print(f"  Total files: {stats.get('total_files', 0)}")
             
             # File types
             file_types = stats.get('file_types', [])
             if file_types:
-                print(f"\n  📄 File types:")
+                print("\n  File types:")
                 for ext, count in file_types[:10]:  # Top 10
                     print(f"    {ext or 'no extension'}: {count} files")
                     
             # Recent files
             recent_files = stats.get('recent_files', [])
             if recent_files:
-                print(f"\n  🕐 Recent files:")
+                print("\n  Recent files:")
                 for name, date in recent_files:
                     print(f"    {name}: {date}")
                     
         except Exception as e:
-            print(f"{Fore.RED}❌ Error getting statistics: {e}{Style.RESET_ALL}")
+            print(f"Error getting statistics: {e}")
             
     def _reindex_all_files(self):
         """Tüm dosyaları yeniden indeksler"""
-        print(f"\n{Fore.CYAN}🔄 Reindexing all files...{Style.RESET_ALL}")
+        print("\nReindexing all files...")
         
         try:
             indexed_count = 0
@@ -424,17 +420,17 @@ class TerminalInterface:
                             if file_id:
                                 indexed_count += 1
                         except Exception as e:
-                            print(f"{Fore.YELLOW}⚠️  Error indexing {file_path}: {e}{Style.RESET_ALL}")
+                            print(f"Error indexing {file_path}: {e}")
                             
-            print(f"{Fore.GREEN}✅ Reindexing completed: {indexed_count} files processed{Style.RESET_ALL}")
+            print(f"Reindexing completed: {indexed_count} files processed")
             
         except Exception as e:
-            print(f"{Fore.RED}❌ Reindexing failed: {e}{Style.RESET_ALL}")
+            print(f"Reindexing failed: {e}")
             
     def _start_file_monitoring(self):
         """Dosya izlemeyi başlatır"""
         if self.file_monitor and self.file_monitor.is_running:
-            print(f"{Fore.YELLOW}⚠️  File monitoring already running{Style.RESET_ALL}")
+            print("File monitoring already running")
             return
             
         try:
@@ -443,13 +439,13 @@ class TerminalInterface:
                 callback=self._on_file_change
             )
             
-            print(f"{Fore.CYAN}🔍 Starting file monitoring...{Style.RESET_ALL}")
-            print(f"{Fore.YELLOW}Press Ctrl+C to stop monitoring and return to search{Style.RESET_ALL}")
+            print("Starting file monitoring...")
+            print("Press Ctrl+C to stop monitoring and return to search")
             
             self.file_monitor.run_forever()
             
         except Exception as e:
-            print(f"{Fore.RED}❌ File monitoring error: {e}{Style.RESET_ALL}")
+            print(f"File monitoring error: {e}")
             
     def _on_file_change(self, event_type: str, src_path: str, dest_path: Optional[str] = None):
         """Dosya değişikliği callback'i"""
@@ -457,9 +453,9 @@ class TerminalInterface:
             try:
                 file_id = self.database_manager.add_or_update_file(src_path)
                 if file_id:
-                    print(f"{Fore.GREEN}📝 File indexed: {Path(src_path).name}{Style.RESET_ALL}")
+                    print(f"File indexed: {Path(src_path).name}")
             except Exception as e:
-                print(f"{Fore.YELLOW}⚠️  Indexing error: {e}{Style.RESET_ALL}")
+                print(f"Indexing error: {e}")
                 
     def _process_search_command(self, command: str):
         """Arama komutunu işler"""
@@ -471,7 +467,7 @@ class TerminalInterface:
             return
             
         # Arama yap
-        print(f"\n{Fore.CYAN}🔍 Searching...{Style.RESET_ALL}")
+        print("\nSearching...")
         results = self.query_engine.search(query)
         
         # Sonuçları göster
@@ -489,7 +485,7 @@ class TerminalInterface:
                 parts = parts[1:]
                 
             if not parts:
-                print(f"{Fore.YELLOW}⚠️  Empty search query{Style.RESET_ALL}")
+                print("Empty search query")
                 return None
                 
             query = SearchQuery()
@@ -547,21 +543,21 @@ class TerminalInterface:
             return query
             
         except Exception as e:
-            print(f"{Fore.RED}❌ Error parsing command: {e}{Style.RESET_ALL}")
+            print(f"Error parsing command: {e}")
             return None
             
     def _display_search_results(self, results: List[SearchResult], query: SearchQuery, save_to_file: Optional[str] = None):
         """Arama sonuçlarını gösterir ve isteğe bağlı olarak dosyaya kaydeder"""
         
         if not results:
-            message = "📭 No results found"
-            print(f"{Fore.YELLOW}{message}{Style.RESET_ALL}")
+            message = "No results found"
+            print(message)
             if save_to_file:
                 self._save_results_to_file([], query, save_to_file, message)
             return
             
-        message = f"✅ Found {len(results)} results"
-        print(f"\n{Fore.GREEN}{message}{Style.RESET_ALL}")
+        message = f"Found {len(results)} results"
+        print(f"\n{message}")
         
         # Dosyaya kaydet
         if save_to_file:
@@ -600,21 +596,21 @@ class TerminalInterface:
         
         # Highlights göster
         if results and results[0].match_highlights:
-            print(f"\n{Fore.CYAN}🔍 Match highlights (first result):{Style.RESET_ALL}")
+            print(f"\nMatch highlights (first result):")
             for highlight in results[0].match_highlights[:3]:
                 print(f"  ... {highlight.strip()} ...")
                 
         # Daha fazla sonuç varsa bildir
         if len(results) > self.max_results_display:
             remaining = len(results) - self.max_results_display
-            print(f"\n{Fore.YELLOW}📄 {remaining} more results available. Use --limit to show more.{Style.RESET_ALL}")
+            print(f"\n {remaining} more results available. Use --limit to show more.")
     
     def _save_results_to_file(self, results: List[SearchResult], query: SearchQuery, file_path: str, message: str):
         """Arama sonuçlarını dosyaya kaydeder"""
         try:
             with open(file_path, 'w', encoding='utf-8') as f:
                 # Header
-                f.write(f"# 🔍 Collective Memory - Search Results\n\n")
+                f.write(f"# Collective Memory - Search Results\n\n")
                 f.write(f"**Search Query:** `{query.text}`\n")
                 f.write(f"**Date:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
                 f.write(f"**Results:** {message}\n\n")
@@ -660,10 +656,10 @@ class TerminalInterface:
                 
                 f.write(f"*Generated by Collective Memory v1.0.0 - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*\n")
             
-            print(f"{Fore.GREEN}💾 Results saved to: {file_path}{Style.RESET_ALL}")
+            print(f"Results saved to: {file_path}")
             
         except Exception as e:
-            print(f"{Fore.RED}❌ Error saving file: {e}{Style.RESET_ALL}")
+            print(f"Error saving file: {e}")
             
     def _format_file_size(self, size: int) -> str:
         """Dosya boyutunu formatlar"""
@@ -716,14 +712,14 @@ class TerminalInterface:
     def cmd_cursor_history(self, args: str):
         """Cursor chat geçmişini görüntüle - Enhanced version"""
         if not self.data_path:
-            print(f"{Fore.RED}❌ Data path belirtilmedi. --data-path kullanın.{Style.RESET_ALL}")
+            print("Data path belirtilmedi. --data-path kullanın.")
             return
             
         try:
             cursor_reader = EnhancedCursorDatabaseReader()
             
             if not cursor_reader.is_cursor_available():
-                print(f"{Fore.YELLOW}⚠️  Cursor veritabanı bulunamadı.{Style.RESET_ALL}")
+                print("Cursor veritabanı bulunamadı.")
                 return
             
             # Argüman parsing
@@ -736,35 +732,35 @@ class TerminalInterface:
                     try:
                         limit = int(part.split('=')[1])
                     except ValueError:
-                        print(f"{Fore.RED}❌ Geçersiz limit değeri: {part}{Style.RESET_ALL}")
+                        print(f"Geçersiz limit değeri: {part}")
                         return
                 elif part == '--workspaces':
                     show_workspaces = True
             
             if show_workspaces:
                 # Tüm workspace'leri göster
-                print(f"{Fore.CYAN}📊 Cursor Workspace Özeti:{Style.RESET_ALL}")
+                print("Cursor Workspace Özeti:")
                 workspaces = cursor_reader.get_all_workspaces_summary()
                 
                 if not workspaces:
-                    print(f"{Fore.YELLOW}⚠️  Hiçbir workspace bulunamadı.{Style.RESET_ALL}")
+                    print("Hiçbir workspace bulunamadı.")
                     return
                     
                 for workspace_key, workspace_data in workspaces.items():
                     info = workspace_data['info']
-                    print(f"\n{Fore.GREEN}🗂️  {workspace_key}{Style.RESET_ALL}")
-                    print(f"   📁 Path: {info.get('path', 'Bilinmiyor')}")
-                    print(f"   💬 Chat sayısı: {workspace_data['chat_count']}")
-                    print(f"   ⏰ Son aktivite: {workspace_data.get('last_activity', 'Bilinmiyor')}")
-                    print(f"   🗄️  DB: {workspace_data['db_path']}")
+                    print(f"\n{workspace_key}")
+                    print(f"   Path: {info.get('path', 'Bilinmiyor')}")
+                    print(f"   Chat sayısı: {workspace_data['chat_count']}")
+                    print(f"   Son aktivite: {workspace_data.get('last_activity', 'Bilinmiyor')}")
+                    print(f"   DB: {workspace_data['db_path']}")
                     
             else:
                 # Mevcut proje için chat geçmişi
-                print(f"{Fore.CYAN}💬 Cursor Chat Geçmişi ({limit} sonuç):{Style.RESET_ALL}")
+                print(f"Cursor Chat Geçmişi ({limit} sonuç):")
                 chats = cursor_reader.get_project_chat_history(self.data_path, limit)
                 
                 if not chats:
-                    print(f"{Fore.YELLOW}⚠️  Bu proje için chat geçmişi bulunamadı.{Style.RESET_ALL}")
+                    print("Bu proje için chat geçmişi bulunamadı.")
                     return
                 
                 for i, chat in enumerate(chats, 1):
@@ -784,26 +780,26 @@ class TerminalInterface:
                     
                     icon = type_icons.get(chat_type, '❓')
                     
-                    print(f"\n{Fore.GREEN}{i:2d}. {icon} [{chat_type}] - {key_type}{Style.RESET_ALL}")
-                    print(f"     {Fore.BLUE}ID:{Style.RESET_ALL} {chat.get('id', 'N/A')}")
-                    print(f"     {Fore.MAGENTA}📝 Özet:{Style.RESET_ALL} {summary}")
+                    print(f"\n{i:2d}. {icon} [{chat_type}] - {key_type}")
+                    print(f"     ID: {chat.get('id', 'N/A')}")
+                    print(f"     Özet: {summary}")
                     
                     # Ek bilgiler
                     if 'message_count' in chat:
-                        print(f"     {Fore.CYAN}📊 Mesaj sayısı:{Style.RESET_ALL} {chat['message_count']}")
+                        print(f"     Mesaj sayısı: {chat['message_count']}")
                     
                     if 'prompt' in chat and 'response' in chat:
                         prompt_preview = chat['prompt'][:100] + "..." if len(chat['prompt']) > 100 else chat['prompt']
-                        print(f"     {Fore.YELLOW}❓ Prompt:{Style.RESET_ALL} {prompt_preview}")
+                        print(f"     Prompt: {prompt_preview}")
                         
         except Exception as e:
-            print(f"{Fore.RED}❌ Cursor geçmiş okuma hatası: {e}{Style.RESET_ALL}")
+            print(f"Cursor geçmiş okuma hatası: {e}")
 
     def cmd_help(self, args: str):
         """Yardım komutlarını göster"""
         # ... existing help content ...
         
-        print(f"{Fore.CYAN}📚 Enhanced Cursor Commands:{Style.RESET_ALL}")
+        print("Enhanced Cursor Commands:")
         print("  cursor_history [--limit=N] [--workspaces]  - Cursor chat geçmişini göster")
         print("    Örnekler:")
         print("      cursor_history                          - Son 10 chat'i göster")
@@ -861,11 +857,11 @@ def main():
             interface.run_command_mode(args)
             
     except KeyboardInterrupt:
-        print(f"\n{Fore.YELLOW}⚠️  Interrupted by user{Style.RESET_ALL}")
+        print("\nInterrupted by user")
     except Exception as e:
-        print(f"{Fore.RED}❌ Error: {e}{Style.RESET_ALL}")
+        print(f"Error: {e}")
     finally:
         interface.cleanup()
 
 if __name__ == "__main__":
-    main() 
+    main()

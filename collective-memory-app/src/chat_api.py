@@ -10,7 +10,7 @@ from typing import Dict, Any, List
 import json
 from datetime import datetime
 
-from json_chat_manager import JSONChatManager, ChatMessage, ChatConversation
+from src.json_chat_manager import JSONChatManager, ChatMessage, ChatConversation
 
 class ChatAPI:
     """JSON Chat Manager için API sınıfı"""
