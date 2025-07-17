@@ -261,8 +261,10 @@ class ChatAPI:
                     'error': str(e)
                 }), 500
 
-def register_chat_api(app, data_folder: str = None):
-    """Flask app'e chat API'yi kaydet"""
+def register_chat_api(app, data_folder: str = None, blueprint_name: str = "chat_api"):
     chat_api = ChatAPI(data_folder)
+    # Blueprint ismini parametre olarak ver
+    chat_api.blueprint = Blueprint(blueprint_name, __name__, url_prefix='/api/v1/chat')
+    chat_api._setup_routes()
     app.register_blueprint(chat_api.blueprint)
-    return chat_api 
+    return chat_api

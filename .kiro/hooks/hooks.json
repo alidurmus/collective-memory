@@ -1,0 +1,281 @@
+{
+  "hooks": [
+    {
+      "id": "auto-test-on-save",
+      "name": "Otomatik Test Çalıştırma",
+      "description": "Python veya JavaScript dosyası kaydedildiğinde ilgili testleri otomatik çalıştırır",
+      "trigger": {
+        "type": "file_save",
+        "patterns": ["**/*.py", "**/*.js", "**/*.ts", "**/*.jsx", "**/*.tsx"]
+      },
+      "enabled": true,
+      "actions": [
+        {
+          "type": "run_tests",
+          "config": {
+            "python_command": "python -m pytest tests/ -v --tb=short",
+            "javascript_command": "npm test",
+            "timeout": 30000
+          }
+        }
+      ]
+    },
+    {
+      "id": "update-docs-on-api-change",
+      "name": "API Değişikliklerinde Dokümantasyon Güncelleme",
+      "description": "API dosyaları değiştiğinde dokümantasyonu otomatik günceller",
+      "trigger": {
+        "type": "file_save",
+        "patterns": ["**/api/**/*.py", "**/views/**/*.py", "**/serializers/**/*.py"]
+      },
+      "enabled": true,
+      "actions": [
+        {
+          "type": "generate_api_docs",
+          "config": {
+            "output_path": "docs/api/",
+            "format": "markdown",
+            "include_examples": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "format-code-on-save",
+      "name": "Kod Formatlama",
+      "description": "Dosya kaydedildiğinde kodu otomatik formatlar",
+      "trigger": {
+        "type": "file_save",
+        "patterns": ["**/*.py", "**/*.js", "**/*.ts", "**/*.jsx", "**/*.tsx"]
+      },
+      "enabled": true,
+      "actions": [
+        {
+          "type": "format_code",
+          "config": {
+            "python_formatter": "black",
+            "javascript_formatter": "prettier",
+            "python_args": ["--line-length", "88"],
+            "javascript_args": ["--single-quote", "--trailing-comma", "es5"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "security-scan-on-dependency-change",
+      "name": "Güvenlik Taraması",
+      "description": "Dependency dosyaları değiştiğinde güvenlik taraması yapar",
+      "trigger": {
+        "type": "file_save",
+        "patterns": ["requirements.txt", "package.json", "package-lock.json", "Pipfile"]
+      },
+      "enabled": true,
+      "actions": [
+        {
+          "type": "security_scan",
+          "config": {
+            "python_scanner": "safety check",
+            "javascript_scanner": "npm audit",
+            "report_path": "docs/reports/security-reports/"
+          }
+        }
+      ]
+    },
+    {
+      "id": "database-migration-check",
+      "name": "Veritabanı Migration Kontrolü",
+      "description": "Model dosyaları değiştiğinde migration gereksinimini kontrol eder",
+      "trigger": {
+        "type": "file_save",
+        "patterns": ["**/models/**/*.py", "**/models.py"]
+      },
+      "enabled": true,
+      "actions": [
+        {
+          "type": "check_migrations",
+          "config": {
+            "django_command": "python manage.py makemigrations --dry-run",
+            "auto_create": false,
+            "notify_user": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "performance-monitor",
+      "name": "Performans İzleme",
+      "description": "Kritik dosyalar değiştiğinde performans testleri çalıştırır",
+      "trigger": {
+        "type": "file_save",
+        "patterns": ["**/views/**/*.py", "**/api/**/*.py", "**/search/**/*.py"]
+      },
+      "enabled": false,
+      "actions": [
+        {
+          "type": "performance_test",
+          "config": {
+            "test_command": "python -m pytest tests/performance/ -v",
+            "threshold_ms": 500,
+            "report_path": "docs/reports/performance-reports/"
+          }
+        }
+      ]
+    },
+    {
+      "id": "translation-update",
+      "name": "Çeviri Güncelleme",
+      "description": "UI metinleri değiştiğinde çeviri dosyalarını günceller",
+      "trigger": {
+        "type": "file_save",
+        "patterns": ["**/frontend/**/*.jsx", "**/frontend/**/*.tsx", "**/templates/**/*.html"]
+      },
+      "enabled": true,
+      "actions": [
+        {
+          "type": "update_translations",
+          "config": {
+            "extract_command": "python manage.py makemessages -l tr",
+            "source_language": "en",
+            "target_languages": ["tr"],
+            "auto_translate": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "spell-check-docs",
+      "name": "Dokümantasyon Yazım Kontrolü",
+      "description": "Manuel tetikleme ile dokümantasyon dosyalarında yazım kontrolü yapar",
+      "trigger": {
+        "type": "manual",
+        "button_text": "Yazım Kontrolü Yap"
+      },
+      "enabled": true,
+      "actions": [
+        {
+          "type": "spell_check",
+          "config": {
+            "patterns": ["**/*.md", "**/*.rst", "docs/**/*.txt"],
+            "language": "tr",
+            "ignore_words": ["API", "JSON", "HTTP", "URL", "Django", "React", "TypeScript"],
+            "report_path": "docs/reports/spell-check-reports/"
+          }
+        }
+      ]
+    },
+    {
+      "id": "backup-database",
+      "name": "Veritabanı Yedekleme",
+      "description": "Manuel tetikleme ile veritabanını yedekler",
+      "trigger": {
+        "type": "manual",
+        "button_text": "Veritabanını Yedekle"
+      },
+      "enabled": true,
+      "actions": [
+        {
+          "type": "backup_database",
+          "config": {
+            "backup_command": "python manage.py dbbackup",
+            "backup_path": "backups/",
+            "compress": true,
+            "timestamp": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "generate-test-report",
+      "name": "Test Raporu Oluşturma",
+      "description": "Kapsamlı test raporu oluşturur ve organize eder",
+      "trigger": {
+        "type": "manual",
+        "button_text": "Test Raporu Oluştur"
+      },
+      "enabled": true,
+      "actions": [
+        {
+          "type": "generate_test_report",
+          "config": {
+            "backend_tests": "python -m pytest tests/ --cov=. --cov-report=html --cov-report=json",
+            "frontend_tests": "npm run test:coverage",
+            "e2e_tests": "npx playwright test --reporter=html",
+            "output_path": "docs/reports/test-reports/",
+            "include_coverage": true,
+            "turkish_report": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "system-health-check",
+      "name": "Sistem Sağlık Kontrolü",
+      "description": "Sistem bileşenlerinin sağlığını kontrol eder",
+      "trigger": {
+        "type": "scheduled",
+        "schedule": "0 */6 * * *",
+        "description": "Her 6 saatte bir çalışır"
+      },
+      "enabled": true,
+      "actions": [
+        {
+          "type": "health_check",
+          "config": {
+            "checks": [
+              "database_connection",
+              "redis_connection", 
+              "disk_space",
+              "memory_usage",
+              "api_endpoints"
+            ],
+            "report_path": "docs/reports/system-health/",
+            "alert_threshold": 80,
+            "turkish_notifications": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "cleanup-temp-files",
+      "name": "Geçici Dosya Temizleme",
+      "description": "Geçici dosyaları ve cache'leri temizler",
+      "trigger": {
+        "type": "scheduled",
+        "schedule": "0 2 * * *",
+        "description": "Her gün saat 02:00'da çalışır"
+      },
+      "enabled": true,
+      "actions": [
+        {
+          "type": "cleanup",
+          "config": {
+            "patterns": [
+              "**/*.pyc",
+              "**/__pycache__/**",
+              "**/node_modules/.cache/**",
+              "**/test-results/**",
+              "**/coverage/**",
+              "**/.pytest_cache/**"
+            ],
+            "max_age_days": 7,
+            "dry_run": false
+          }
+        }
+      ]
+    }
+  ],
+  "global_settings": {
+    "notification_enabled": true,
+    "notification_language": "tr",
+    "log_level": "info",
+    "max_concurrent_hooks": 3,
+    "timeout_seconds": 300,
+    "retry_count": 2,
+    "report_organization": {
+      "enabled": true,
+      "base_path": "docs/reports/",
+      "auto_organize": true,
+      "retention_days": 30
+    }
+  }
+}
