@@ -1,0 +1,303 @@
+{
+  "ui_components": {
+    "sidebar_panel": {
+      "title": "Agent Hooks",
+      "icon": "🎣",
+      "position": "right",
+      "collapsible": true,
+      "default_expanded": true,
+      "sections": [
+        {
+          "id": "status",
+          "title": "Hook Durumu",
+          "type": "status_display",
+          "content": {
+            "manager_status": "Aktif",
+            "active_hooks": 11,
+            "total_hooks": 11,
+            "last_execution": "2025-07-17T13:38:38"
+          }
+        },
+        {
+          "id": "categories",
+          "title": "Hook Kategorileri",
+          "type": "category_list",
+          "collapsible": true,
+          "default_expanded": true
+        },
+        {
+          "id": "recent_activity",
+          "title": "Son Aktiviteler",
+          "type": "activity_log",
+          "max_items": 5,
+          "auto_refresh": true
+        },
+        {
+          "id": "quick_actions",
+          "title": "Hızlı İşlemler",
+          "type": "button_group",
+          "buttons": [
+            {
+              "id": "start_hooks",
+              "text": "Hook'ları Başlat",
+              "icon": "▶️",
+              "action": "start_hook_manager",
+              "style": "primary"
+            },
+            {
+              "id": "stop_hooks",
+              "text": "Hook'ları Durdur",
+              "icon": "⏹️",
+              "action": "stop_hook_manager",
+              "style": "secondary"
+            },
+            {
+              "id": "refresh_status",
+              "text": "Durumu Yenile",
+              "icon": "🔄",
+              "action": "refresh_hook_status",
+              "style": "tertiary"
+            }
+          ]
+        }
+      ]
+    },
+    "hook_item": {
+      "template": {
+        "layout": "horizontal",
+        "components": [
+          {
+            "type": "icon",
+            "source": "hook.icon",
+            "size": "medium"
+          },
+          {
+            "type": "content",
+            "layout": "vertical",
+            "components": [
+              {
+                "type": "title",
+                "source": "hook.name",
+                "style": "bold"
+              },
+              {
+                "type": "description",
+                "source": "hook.description",
+                "style": "muted",
+                "max_length": 60
+              },
+              {
+                "type": "metadata",
+                "layout": "horizontal",
+                "components": [
+                  {
+                    "type": "badge",
+                    "source": "hook.trigger",
+                    "style": "info"
+                  },
+                  {
+                    "type": "status_indicator",
+                    "source": "hook.enabled",
+                    "true_text": "Aktif",
+                    "false_text": "Pasif",
+                    "true_color": "green",
+                    "false_color": "gray"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "actions",
+            "layout": "vertical",
+            "components": [
+              {
+                "type": "toggle",
+                "source": "hook.enabled",
+                "action": "toggle_hook",
+                "size": "small"
+              },
+              {
+                "type": "button",
+                "text": "Çalıştır",
+                "icon": "▶️",
+                "action": "execute_hook",
+                "style": "outline",
+                "size": "small",
+                "visible_when": "hook.trigger === 'manual'"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "category_section": {
+      "template": {
+        "layout": "vertical",
+        "components": [
+          {
+            "type": "header",
+            "layout": "horizontal",
+            "components": [
+              {
+                "type": "icon",
+                "source": "category.icon",
+                "size": "small"
+              },
+              {
+                "type": "title",
+                "source": "category.name",
+                "style": "semibold"
+              },
+              {
+                "type": "counter",
+                "source": "category.hook_count",
+                "style": "badge"
+              }
+            ]
+          },
+          {
+            "type": "hook_list",
+            "source": "category.hooks",
+            "item_template": "hook_item"
+          }
+        ]
+      }
+    },
+    "activity_item": {
+      "template": {
+        "layout": "horizontal",
+        "components": [
+          {
+            "type": "timestamp",
+            "source": "activity.timestamp",
+            "format": "HH:mm",
+            "style": "muted"
+          },
+          {
+            "type": "icon",
+            "source": "activity.status",
+            "mapping": {
+              "success": "✅",
+              "error": "❌",
+              "warning": "⚠️",
+              "info": "ℹ️"
+            }
+          },
+          {
+            "type": "message",
+            "source": "activity.message",
+            "style": "normal",
+            "max_length": 40
+          }
+        ]
+      }
+    }
+  },
+  "actions": {
+    "start_hook_manager": {
+      "type": "command",
+      "command": "python .kiro/hooks/scripts/hook-manager.py start",
+      "working_directory": ".",
+      "background": true,
+      "success_message": "Hook Manager başlatıldı",
+      "error_message": "Hook Manager başlatılamadı"
+    },
+    "stop_hook_manager": {
+      "type": "command",
+      "command": "taskkill /F /IM python.exe /FI \"WINDOWTITLE eq hook-manager*\"",
+      "success_message": "Hook Manager durduruldu",
+      "error_message": "Hook Manager durdurulamadı"
+    },
+    "refresh_hook_status": {
+      "type": "command",
+      "command": "python .kiro/hooks/scripts/hook-manager.py status",
+      "working_directory": ".",
+      "parse_output": true,
+      "success_message": "Durum güncellendi"
+    },
+    "toggle_hook": {
+      "type": "config_update",
+      "file": ".kiro/hooks/hooks.json",
+      "path": "hooks[{hook_id}].enabled",
+      "value": "{!current_value}",
+      "success_message": "Hook durumu güncellendi"
+    },
+    "execute_hook": {
+      "type": "command",
+      "command": "python .kiro/hooks/scripts/hook-manager.py test {hook_id}",
+      "working_directory": ".",
+      "success_message": "Hook çalıştırıldı",
+      "error_message": "Hook çalıştırılamadı"
+    }
+  },
+  "notifications": {
+    "hook_executed": {
+      "title": "Hook Çalıştırıldı",
+      "message": "{hook_name} başarıyla çalıştırıldı",
+      "type": "success",
+      "duration": 3000
+    },
+    "hook_failed": {
+      "title": "Hook Hatası",
+      "message": "{hook_name} çalıştırılamadı: {error}",
+      "type": "error",
+      "duration": 5000
+    },
+    "hook_enabled": {
+      "title": "Hook Aktifleştirildi",
+      "message": "{hook_name} aktifleştirildi",
+      "type": "info",
+      "duration": 2000
+    },
+    "hook_disabled": {
+      "title": "Hook Devre Dışı",
+      "message": "{hook_name} devre dışı bırakıldı",
+      "type": "info",
+      "duration": 2000
+    }
+  },
+  "keyboard_shortcuts": {
+    "toggle_hooks_panel": "Ctrl+Shift+H",
+    "start_hooks": "Ctrl+Shift+S",
+    "stop_hooks": "Ctrl+Shift+X",
+    "refresh_status": "Ctrl+Shift+R"
+  },
+  "context_menu": {
+    "file_explorer": [
+      {
+        "label": "Hook'larla Test Et",
+        "action": "run_file_hooks",
+        "icon": "🧪",
+        "when": "file.extension in ['.py', '.js', '.ts', '.jsx', '.tsx']"
+      },
+      {
+        "label": "Kodu Formatla",
+        "action": "format_file",
+        "icon": "✨",
+        "when": "file.extension in ['.py', '.js', '.ts', '.jsx', '.tsx']"
+      }
+    ],
+    "editor": [
+      {
+        "label": "Bu Dosya İçin Hook'ları Çalıştır",
+        "action": "run_current_file_hooks",
+        "icon": "🎣",
+        "shortcut": "Ctrl+Shift+H"
+      }
+    ]
+  },
+  "status_bar": {
+    "items": [
+      {
+        "id": "hook_status",
+        "text": "Hooks: {active_count}/{total_count}",
+        "tooltip": "Agent Hooks Durumu",
+        "icon": "🎣",
+        "click_action": "toggle_hooks_panel",
+        "color": "{status_color}",
+        "priority": 100
+      }
+    ]
+  }
+}

@@ -1,0 +1,237 @@
+{
+  "name": "Agent Hooks",
+  "version": "1.0.0",
+  "description": "Otomatik geliştirme süreç hook'ları",
+  "author": "Collective Memory Team",
+  "kiro_version": ">=1.0.0",
+  "hooks": [
+    {
+      "id": "auto-test-on-save",
+      "name": "Otomatik Test Çalıştırma",
+      "description": "Dosya kaydedildiğinde ilgili testleri otomatik çalıştırır",
+      "icon": "🧪",
+      "category": "testing",
+      "trigger": "file_save",
+      "patterns": ["**/*.py", "**/*.js", "**/*.ts", "**/*.jsx", "**/*.tsx"],
+      "enabled": true,
+      "ui": {
+        "show_in_sidebar": true,
+        "show_notifications": true,
+        "button_text": "Test Çalıştır"
+      }
+    },
+    {
+      "id": "format-code-on-save",
+      "name": "Kod Formatlama",
+      "description": "Dosya kaydedildiğinde kodu otomatik formatlar (Black/Prettier)",
+      "icon": "✨",
+      "category": "formatting",
+      "trigger": "file_save",
+      "patterns": ["**/*.py", "**/*.js", "**/*.ts", "**/*.jsx", "**/*.tsx"],
+      "enabled": true,
+      "ui": {
+        "show_in_sidebar": true,
+        "show_notifications": false,
+        "button_text": "Formatla"
+      }
+    },
+    {
+      "id": "security-scan-on-dependency-change",
+      "name": "Güvenlik Taraması",
+      "description": "Dependency dosyaları değiştiğinde güvenlik taraması yapar",
+      "icon": "🔒",
+      "category": "security",
+      "trigger": "file_save",
+      "patterns": ["requirements.txt", "package.json", "package-lock.json"],
+      "enabled": true,
+      "ui": {
+        "show_in_sidebar": true,
+        "show_notifications": true,
+        "button_text": "Güvenlik Taraması"
+      }
+    },
+    {
+      "id": "update-docs-on-api-change",
+      "name": "API Dokümantasyon Güncelleme",
+      "description": "API dosyaları değiştiğinde dokümantasyonu otomatik günceller",
+      "icon": "📚",
+      "category": "documentation",
+      "trigger": "file_save",
+      "patterns": ["**/api/**/*.py", "**/views/**/*.py", "**/serializers/**/*.py"],
+      "enabled": true,
+      "ui": {
+        "show_in_sidebar": true,
+        "show_notifications": true,
+        "button_text": "Doküman Güncelle"
+      }
+    },
+    {
+      "id": "database-migration-check",
+      "name": "Migration Kontrolü",
+      "description": "Model dosyaları değiştiğinde migration gereksinimini kontrol eder",
+      "icon": "🗄️",
+      "category": "database",
+      "trigger": "file_save",
+      "patterns": ["**/models/**/*.py", "**/models.py"],
+      "enabled": true,
+      "ui": {
+        "show_in_sidebar": true,
+        "show_notifications": true,
+        "button_text": "Migration Kontrol"
+      }
+    },
+    {
+      "id": "translation-update",
+      "name": "Çeviri Güncelleme",
+      "description": "UI metinleri değiştiğinde çeviri dosyalarını günceller",
+      "icon": "🌐",
+      "category": "localization",
+      "trigger": "file_save",
+      "patterns": ["**/frontend/**/*.jsx", "**/frontend/**/*.tsx", "**/templates/**/*.html"],
+      "enabled": true,
+      "ui": {
+        "show_in_sidebar": true,
+        "show_notifications": true,
+        "button_text": "Çeviri Güncelle"
+      }
+    },
+    {
+      "id": "system-health-check",
+      "name": "Sistem Sağlık Kontrolü",
+      "description": "Sistem bileşenlerinin sağlığını periyodik olarak kontrol eder",
+      "icon": "🏥",
+      "category": "monitoring",
+      "trigger": "scheduled",
+      "schedule": "0 */6 * * *",
+      "enabled": true,
+      "ui": {
+        "show_in_sidebar": true,
+        "show_notifications": true,
+        "button_text": "Sağlık Kontrolü"
+      }
+    },
+    {
+      "id": "cleanup-temp-files",
+      "name": "Geçici Dosya Temizleme",
+      "description": "Geçici dosyaları ve cache'leri periyodik olarak temizler",
+      "icon": "🧹",
+      "category": "maintenance",
+      "trigger": "scheduled",
+      "schedule": "0 2 * * *",
+      "enabled": true,
+      "ui": {
+        "show_in_sidebar": true,
+        "show_notifications": false,
+        "button_text": "Temizlik Yap"
+      }
+    },
+    {
+      "id": "generate-test-report",
+      "name": "Test Raporu Oluşturma",
+      "description": "Kapsamlı test raporu oluşturur ve organize eder",
+      "icon": "📊",
+      "category": "reporting",
+      "trigger": "manual",
+      "enabled": true,
+      "ui": {
+        "show_in_sidebar": true,
+        "show_notifications": true,
+        "button_text": "Test Raporu Oluştur"
+      }
+    },
+    {
+      "id": "spell-check-docs",
+      "name": "Dokümantasyon Yazım Kontrolü",
+      "description": "Dokümantasyon dosyalarında yazım kontrolü yapar",
+      "icon": "📝",
+      "category": "documentation",
+      "trigger": "manual",
+      "enabled": true,
+      "ui": {
+        "show_in_sidebar": true,
+        "show_notifications": true,
+        "button_text": "Yazım Kontrolü"
+      }
+    },
+    {
+      "id": "backup-database",
+      "name": "Veritabanı Yedekleme",
+      "description": "Veritabanını güvenli şekilde yedekler",
+      "icon": "💾",
+      "category": "backup",
+      "trigger": "manual",
+      "enabled": true,
+      "ui": {
+        "show_in_sidebar": true,
+        "show_notifications": true,
+        "button_text": "Veritabanını Yedekle"
+      }
+    }
+  ],
+  "categories": {
+    "testing": {
+      "name": "Test İşlemleri",
+      "icon": "🧪",
+      "color": "#4CAF50"
+    },
+    "formatting": {
+      "name": "Kod Formatlama",
+      "icon": "✨",
+      "color": "#2196F3"
+    },
+    "security": {
+      "name": "Güvenlik",
+      "icon": "🔒",
+      "color": "#F44336"
+    },
+    "documentation": {
+      "name": "Dokümantasyon",
+      "icon": "📚",
+      "color": "#FF9800"
+    },
+    "database": {
+      "name": "Veritabanı",
+      "icon": "🗄️",
+      "color": "#9C27B0"
+    },
+    "localization": {
+      "name": "Yerelleştirme",
+      "icon": "🌐",
+      "color": "#00BCD4"
+    },
+    "monitoring": {
+      "name": "İzleme",
+      "icon": "🏥",
+      "color": "#8BC34A"
+    },
+    "maintenance": {
+      "name": "Bakım",
+      "icon": "🧹",
+      "color": "#607D8B"
+    },
+    "reporting": {
+      "name": "Raporlama",
+      "icon": "📊",
+      "color": "#3F51B5"
+    },
+    "backup": {
+      "name": "Yedekleme",
+      "icon": "💾",
+      "color": "#795548"
+    }
+  },
+  "settings": {
+    "notification_enabled": true,
+    "notification_language": "tr",
+    "auto_start": true,
+    "log_level": "info",
+    "max_concurrent_hooks": 3,
+    "timeout_seconds": 300
+  },
+  "ui_config": {
+    "sidebar_position": "right",
+    "show_categories": true,
+    "show_status_indicators": true,
+    "theme": "auto"
+  }
+}

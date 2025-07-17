@@ -1,0 +1,65 @@
+{
+  "extensions": [
+    {
+      "id": "collective-memory-agent-hooks",
+      "name": "Collective Memory Agent Hooks",
+      "type": "agent_hooks",
+      "version": "1.0.0",
+      "path": ".kiro/hooks/",
+      "manifest": ".kiro/hooks/manifest.json",
+      "enabled": true,
+      "auto_start": true,
+      "description": "Otomatik geliştirme süreç yönetimi için akıllı hook sistemi",
+      "capabilities": [
+        "file_monitoring",
+        "scheduled_tasks", 
+        "manual_execution",
+        "test_automation",
+        "code_formatting",
+        "security_scanning",
+        "documentation_generation",
+        "system_monitoring",
+        "cleanup_automation",
+        "report_generation"
+      ],
+      "ui_components": [
+        {
+          "type": "sidebar_panel",
+          "title": "Agent Hooks",
+          "icon": "🎣",
+          "config": ".kiro/hooks/hook-ui.json"
+        },
+        {
+          "type": "status_bar",
+          "text": "Hooks: {active_count}",
+          "tooltip": "Agent Hooks Status"
+        },
+        {
+          "type": "command_palette",
+          "commands": [
+            "agent-hooks.start",
+            "agent-hooks.stop", 
+            "agent-hooks.status",
+            "agent-hooks.configure",
+            "agent-hooks.view-reports"
+          ]
+        }
+      ],
+      "activation": {
+        "events": [
+          "onStartupFinished",
+          "onLanguage:python",
+          "onLanguage:javascript"
+        ],
+        "commands": [
+          "python .kiro/hooks/scripts/hook-manager.py start"
+        ]
+      }
+    }
+  ],
+  "settings": {
+    "auto_discover": true,
+    "auto_enable": true,
+    "notification_enabled": true
+  }
+}

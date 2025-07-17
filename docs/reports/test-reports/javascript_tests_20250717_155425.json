@@ -1,0 +1,10 @@
+{
+  "timestamp": "2025-07-17T15:54:25.291379",
+  "test_type": "javascript_tests",
+  "command": "npm test",
+  "duration_seconds": 1.01,
+  "exit_code": 4294963238,
+  "stdout": "",
+  "stderr": "npm error code ENOENT\nnpm error syscall open\nnpm error path C:\\cursor\\collective-memory\\package.json\nnpm error errno -4058\nnpm error enoent Could not read package.json: Error: ENOENT: no such file or directory, open 'C:\\cursor\\collective-memory\\package.json'\nnpm error enoent This is related to npm not being able to find a file.\nnpm error enoent\nnpm error A complete log of this run can be found in: C:\\Users\\hp\\AppData\\Local\\npm-cache\\_logs\\2025-07-17T12_54_25_093Z-debug-0.log\n",
+  "success": false
+}
