@@ -8,7 +8,7 @@ import os
 import sys
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Optional, Any
 
 from flask import Flask, request, jsonify, send_from_directory
@@ -47,7 +47,7 @@ class APIResponse:
 
     def __post_init__(self):
         if self.timestamp is None:
-            self.timestamp = datetime.now(datetime.timezone.utc).isoformat()
+            self.timestamp = datetime.now(timezone.utc).isoformat()
 
 
 class CollectiveMemoryAPI:
@@ -63,12 +63,23 @@ class CollectiveMemoryAPI:
         # Enable CORS
         CORS(self.app, origins=["http://localhost:3000", "http://127.0.0.1:3000"])
 
-        # Initialize SocketIO
-        self.socketio = SocketIO(
-            self.app,
-            cors_allowed_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
-            async_mode="threading",
-        )
+        # Initialize SocketIO with fallback for Windows compatibility
+        try:
+            self.socketio = SocketIO(
+                self.app,
+                cors_allowed_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+                async_mode="threading",
+                logger=False,
+                engineio_logger=False,
+                ping_timeout=60,
+                ping_interval=25
+            )
+            self.websocket_enabled = True
+            logger.info("WebSocket support enabled")
+        except Exception as e:
+            logger.warning(f"WebSocket initialization failed: {e}. Running without WebSocket support.")
+            self.socketio = None
+            self.websocket_enabled = False
 
         # Initialize components
         self.data_folder = data_folder or os.getcwd()
@@ -96,7 +107,7 @@ class CollectiveMemoryAPI:
         self.chat_api = register_chat_api(self.app, self.data_folder)
 
         # System stats
-        self.start_time = datetime.now(datetime.timezone.utc)
+        self.start_time = datetime.now(timezone.utc)
         self.search_count = 0
         self.last_search_time = None
 
@@ -207,7 +218,7 @@ class CollectiveMemoryAPI:
                     "cpuUsage": cpu_usage,
                     "memoryUsage": memory.percent,
                     "diskUsage": disk.percent,
-                    "uptime": str(datetime.utcnow() - self.start_time),
+                    "uptime": str(datetime.now(timezone.utc) - self.start_time),
                 }
 
                 return jsonify(APIResponse(success=True, data=data).__dict__)
@@ -240,7 +251,7 @@ class CollectiveMemoryAPI:
                     "cpuUsage": cpu_usage,
                     "memoryUsage": memory.percent,
                     "diskUsage": disk.percent,
-                    "uptime": str(datetime.utcnow() - self.start_time),
+                    "uptime": str(datetime.now(timezone.utc) - self.start_time),
                 }
 
                 return jsonify(APIResponse(success=True, data=data).__dict__)
@@ -287,9 +298,10 @@ class CollectiveMemoryAPI:
                     self.file_monitor.scan_directory(self.data_folder)
 
                 # Emit WebSocket event
-                self.socketio.emit(
-                    "indexing_started", {"path": path or self.data_folder}
-                )
+                if self.socketio:
+                    self.socketio.emit(
+                        "indexing_started", {"path": path or self.data_folder}
+                    )
 
                 return jsonify(
                     APIResponse(
@@ -348,8 +360,8 @@ class CollectiveMemoryAPI:
 
                 # Track search
                 self.search_count += 1
-                self.last_search_time = datetime.utcnow()
-                search_start = datetime.utcnow()
+                self.last_search_time = datetime.now(timezone.utc)
+                search_start = datetime.now(timezone.utc)
 
                 # Perform search
                 from src.query_engine import SearchQuery
@@ -359,7 +371,7 @@ class CollectiveMemoryAPI:
                 results = self.query_engine.search(search_query)
 
                 # Calculate search time
-                search_time = (datetime.utcnow() - search_start).total_seconds() * 1000
+                search_time = (datetime.now(timezone.utc) - search_start).total_seconds() * 1000
 
                 # Format results
                 formatted_results = []
@@ -430,14 +442,15 @@ class CollectiveMemoryAPI:
                     }
 
                 # Emit WebSocket event
-                self.socketio.emit(
-                    "search_performed",
-                    {
-                        "query": query,
-                        "results_count": len(formatted_results),
-                        "search_time": search_time,
-                    },
-                )
+                if self.socketio:
+                    self.socketio.emit(
+                        "search_performed",
+                        {
+                            "query": query,
+                            "results_count": len(formatted_results),
+                            "search_time": search_time,
+                        },
+                    )
 
                 return jsonify(APIResponse(success=True, data=response_data).__dict__)
 
@@ -445,19 +458,14 @@ class CollectiveMemoryAPI:
                 logger.error(f"Error performing search: {e}")
                 return jsonify(APIResponse(success=False, error=str(e)).__dict__), 500
 
-        # /api/search alias (GET, POST)
+        # /api/search unified endpoint (GET, POST)
         @self.app.route("/api/search", methods=["GET", "POST"])
         def api_search():
+            """Unified search endpoint handling both GET and POST requests"""
             if request.method == "GET":
-                return search()
+                return self._handle_get_search()
             elif request.method == "POST":
-                data = request.get_json() or {}
-                q = data.get("q", "")
-                # Mevcut search fonksiyonunu parametreyle çağırmak için request.args'i patch et
-                from werkzeug.datastructures import MultiDict
-
-                request.args = MultiDict({"q": q})
-                return search()
+                return self._handle_post_search()
 
         @self.app.route("/search/suggestions", methods=["GET"])
         def get_search_suggestions():
@@ -515,10 +523,10 @@ class CollectiveMemoryAPI:
                 # Generate export content
                 if format_type == "markdown":
                     content = self._generate_markdown_export(query, results)
-                    filename = f"search-results-{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.md"
+                    filename = f"search-results-{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.md"
                 elif format_type == "text":
                     content = self._generate_text_export(query, results)
-                    filename = f"search-results-{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.txt"
+                    filename = f"search-results-{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.txt"
                 else:
                     return (
                         jsonify(
@@ -864,6 +872,149 @@ Total results: {len(results)}
 
         return content
 
+    def _handle_get_search(self):
+        """Handle GET requests with query parameters"""
+        query = request.args.get("q", "").strip()
+        if not query:
+            return (
+                jsonify(
+                    APIResponse(
+                        success=False, error='Query parameter "q" is required'
+                    ).__dict__
+                ),
+                400,
+            )
+        
+        # Parse additional parameters
+        semantic = request.args.get("semantic", "false").lower() == "true"
+        limit = min(int(request.args.get("limit", 50)), 200)
+        offset = max(int(request.args.get("offset", 0)), 0)
+        
+        return self._perform_search(query, semantic, limit, offset)
+
+    def _handle_post_search(self):
+        """Handle POST requests with JSON body"""
+        data = request.get_json() or {}
+        query = data.get("q", "").strip()
+        if not query:
+            return (
+                jsonify(
+                    APIResponse(
+                        success=False, error='Query parameter "q" is required'
+                    ).__dict__
+                ),
+                400,
+            )
+        
+        # Parse additional parameters
+        semantic = data.get("semantic", False)
+        limit = min(int(data.get("limit", 50)), 200)
+        offset = max(int(data.get("offset", 0)), 0)
+        
+        return self._perform_search(query, semantic, limit, offset)
+
+    def _perform_search(self, query: str, semantic: bool = False, limit: int = 50, offset: int = 0):
+        """Common search logic for both GET and POST"""
+        try:
+            # Track search
+            self.search_count += 1
+            self.last_search_time = datetime.now(timezone.utc)
+            search_start = datetime.now(timezone.utc)
+
+            # Perform search
+            from src.query_engine import SearchQuery
+
+            search_query = SearchQuery(text=query, limit=limit, sort_by="relevance")
+            results = self.query_engine.search(search_query)
+
+            # Calculate search time
+            search_time = (datetime.now(timezone.utc) - search_start).total_seconds() * 1000
+
+            # Format results
+            formatted_results = []
+            for result in results:
+                formatted_results.append(
+                    {
+                        "id": result.get("id", ""),
+                        "title": result.get("title", ""),
+                        "filename": result.get("filename", ""),
+                        "path": result.get("path", ""),
+                        "content": result.get("content", ""),
+                        "snippet": result.get("snippet", ""),
+                        "score": result.get("score", 0),
+                        "lastModified": result.get("last_modified", ""),
+                        "size": result.get("size", 0),
+                    }
+                )
+
+            response_data = {
+                "results": formatted_results,
+                "total": len(formatted_results),
+                "limit": limit,
+                "offset": offset,
+                "searchTime": f"{search_time:.0f}ms",
+                "semantic": semantic,
+            }
+
+            # Add prompt to database and get related prompts
+            try:
+                search_type = "semantic" if semantic else "basic"
+                user_session = request.headers.get("X-Session-ID", "anonymous")
+
+                # Save current prompt
+                prompt_id = self.db_manager.add_prompt(
+                    prompt_text=query,
+                    search_type=search_type,
+                    results_count=len(formatted_results),
+                    response_time_ms=int(search_time),
+                    user_session=user_session,
+                )
+
+                # Get similar prompts for context suggestions
+                similar_prompts = self.db_manager.get_similar_prompts(
+                    prompt_text=query, limit=3, similarity_threshold=0.6
+                )
+
+                # Get context suggestions
+                context_suggestions = (
+                    self.db_manager.get_prompt_context_suggestions(
+                        current_prompt=query, limit=3
+                    )
+                )
+
+                # Add prompt relationship data to response
+                response_data["promptRelationships"] = {
+                    "promptId": prompt_id,
+                    "similarPrompts": similar_prompts,
+                    "contextSuggestions": context_suggestions,
+                }
+
+            except Exception as e:
+                logger.warning(f"Prompt tracking failed: {e}")
+                # Don't fail the search if prompt tracking fails
+                response_data["promptRelationships"] = {
+                    "promptId": None,
+                    "similarPrompts": [],
+                    "contextSuggestions": [],
+                }
+
+            # Emit WebSocket event
+            if self.socketio:
+                self.socketio.emit(
+                    "search_performed",
+                    {
+                        "query": query,
+                        "results_count": len(formatted_results),
+                        "search_time": search_time,
+                    },
+                )
+
+            return jsonify(APIResponse(success=True, data=response_data).__dict__)
+
+        except Exception as e:
+            logger.error(f"Error performing search: {e}")
+            return jsonify(APIResponse(success=False, error=str(e)).__dict__), 500
+
     def _apply_config_changes(self, config: Dict):
         """Apply configuration changes to system components"""
         try:
@@ -904,7 +1055,11 @@ Total results: {len(results)}
     def run(self, host="127.0.0.1", port=8000, debug=False):
         """Run the API server"""
         logger.info(f"Starting Collective Memory API server on {host}:{port}")
-        self.socketio.run(self.app, host=host, port=port, debug=debug)
+        if self.socketio and self.websocket_enabled:
+            self.socketio.run(self.app, host=host, port=port, debug=debug)
+        else:
+            logger.info("Running without WebSocket support")
+            self.app.run(host=host, port=port, debug=debug)
 
 
 def main():
