@@ -64,21 +64,10 @@ class CollectiveMemoryAPI:
         CORS(self.app, origins=["http://localhost:3000", "http://127.0.0.1:3000"])
 
         # Initialize SocketIO with Windows compatibility
-        try:
-            self.socketio = SocketIO(
-                self.app,
-                cors_allowed_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
-                async_mode="threading",
-                logger=False,  # Disable SocketIO logging to reduce noise
-                engineio_logger=False
-            )
-            self.websocket_enabled = True
-            logger.info("WebSocket support enabled")
-        except Exception as e:
-            logger.warning(f"WebSocket initialization failed: {e}")
-            self.socketio = None
-            self.websocket_enabled = False
-            logger.info("Running without WebSocket support")
+        # Temporarily disabled due to Windows socket issues
+        self.socketio = None
+        self.websocket_enabled = False
+        logger.info("WebSocket support disabled for Windows compatibility")
 
         # Initialize components
         self.data_folder = data_folder or os.getcwd()
