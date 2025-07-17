@@ -70,6 +70,16 @@ class SystemHealthMonitor:
         self.api_response_times = deque(maxlen=100)
         self.error_count = 0
 
+        # Rate limiting for warnings (prevent spam)
+        self.last_warning_times = {}
+        self.warning_cooldown = 3600  # 1 hour in seconds
+
+        # Configuration
+        self.disk_warning_threshold = 95.0  # Increased from 90% to 95%
+        self.memory_warning_threshold = 90.0
+        self.cpu_warning_threshold = 95.0  # Increased from 90% to 95%
+        self.enable_disk_monitoring = True
+
         # Setup logging
         logging.basicConfig(level=logging.INFO)
         self.logger = logging.getLogger(__name__)
@@ -190,31 +200,46 @@ class SystemHealthMonitor:
         except Exception as e:
             self.logger.error(f"Failed to save metrics: {e}")
 
+    def _should_warn(self, warning_type: str) -> bool:
+        """Check if warning should be logged based on cooldown period"""
+        current_time = time.time()
+        last_warning = self.last_warning_times.get(warning_type, 0)
+        
+        if current_time - last_warning >= self.warning_cooldown:
+            self.last_warning_times[warning_type] = current_time
+            return True
+        return False
+
     def _check_alerts(
         self, system_metrics: SystemMetrics, app_metrics: ApplicationMetrics
     ):
-        """Check for critical issues and log alerts"""
+        """Check for critical issues and log alerts with rate limiting"""
         # CPU usage alert
-        if system_metrics.cpu_percent > 90:
-            self.logger.warning(f"High CPU usage: {system_metrics.cpu_percent:.1f}%")
+        if system_metrics.cpu_percent > self.cpu_warning_threshold:
+            if self._should_warn("high_cpu"):
+                self.logger.warning(f"High CPU usage: {system_metrics.cpu_percent:.1f}%")
 
         # Memory usage alert
-        if system_metrics.memory_percent > 90:
-            self.logger.warning(
-                f"High memory usage: {system_metrics.memory_percent:.1f}%"
-            )
+        if system_metrics.memory_percent > self.memory_warning_threshold:
+            if self._should_warn("high_memory"):
+                self.logger.warning(
+                    f"High memory usage: {system_metrics.memory_percent:.1f}%"
+                )
 
-        # Disk space alert
-        if system_metrics.disk_usage_percent > 90:
-            self.logger.warning(
-                f"Low disk space: {system_metrics.disk_usage_percent:.1f}% used"
-            )
+        # Disk space alert (with configurable monitoring)
+        if self.enable_disk_monitoring and system_metrics.disk_usage_percent > self.disk_warning_threshold:
+            if self._should_warn("low_disk"):
+                self.logger.warning(
+                    f"Low disk space: {system_metrics.disk_usage_percent:.1f}% used "
+                    f"({system_metrics.disk_free_gb:.1f}GB free)"
+                )
 
         # Application response time alert
         if app_metrics.api_response_time_avg > 5000:  # 5 seconds
-            self.logger.warning(
-                f"Slow API response: {app_metrics.api_response_time_avg:.0f}ms"
-            )
+            if self._should_warn("slow_api"):
+                self.logger.warning(
+                    f"Slow API response: {app_metrics.api_response_time_avg:.0f}ms"
+                )
 
     # Public methods for application integration
     def record_search_request(self):

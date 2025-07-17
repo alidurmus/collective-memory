@@ -29,7 +29,7 @@ class MemoryDatabase:
     - Performance optimization with indexes
     """
 
-    def __init__(self, db_path: str = "data/memory_system.db"):
+    def __init__(self, db_path: str = "../data/memory_system.db"):
         """Initialize the memory database."""
         self.db_path = db_path
         self.schema_path = "src/database/memory_schema.sql"

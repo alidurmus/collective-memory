@@ -63,23 +63,22 @@ class CollectiveMemoryAPI:
         # Enable CORS
         CORS(self.app, origins=["http://localhost:3000", "http://127.0.0.1:3000"])
 
-        # Initialize SocketIO with fallback for Windows compatibility
+        # Initialize SocketIO with Windows compatibility
         try:
             self.socketio = SocketIO(
                 self.app,
                 cors_allowed_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
                 async_mode="threading",
-                logger=False,
-                engineio_logger=False,
-                ping_timeout=60,
-                ping_interval=25
+                logger=False,  # Disable SocketIO logging to reduce noise
+                engineio_logger=False
             )
             self.websocket_enabled = True
             logger.info("WebSocket support enabled")
         except Exception as e:
-            logger.warning(f"WebSocket initialization failed: {e}. Running without WebSocket support.")
+            logger.warning(f"WebSocket initialization failed: {e}")
             self.socketio = None
             self.websocket_enabled = False
+            logger.info("Running without WebSocket support")
 
         # Initialize components
         self.data_folder = data_folder or os.getcwd()
@@ -779,6 +778,9 @@ class CollectiveMemoryAPI:
 
     def _setup_websocket_events(self):
         """Setup WebSocket event handlers"""
+        if not self.socketio or not self.websocket_enabled:
+            logger.info("Skipping WebSocket event setup - WebSocket disabled")
+            return
 
         @self.socketio.on("connect")
         def handle_connect():
@@ -1043,14 +1045,106 @@ Total results: {len(results)}
         @self.app.route("/", defaults={"path": ""})
         @self.app.route("/<path:path>")
         def serve_frontend(path):
+            # Skip API routes
             if path.startswith("api/") or path.startswith("socket.io"):
                 return NotFound()
+            
+            # Check if static folder exists
+            if not os.path.exists(static_folder):
+                return self._generate_fallback_page()
+            
+            # Try to serve static file
             file_path = os.path.join(static_folder, path)
             if path != "" and os.path.exists(file_path):
                 return send_from_directory(static_folder, path)
             else:
-                # SPA fallback: index.html
-                return send_from_directory(static_folder, "index.html")
+                # Try to serve index.html
+                index_path = os.path.join(static_folder, "index.html")
+                if os.path.exists(index_path):
+                    return send_from_directory(static_folder, "index.html")
+                else:
+                    return self._generate_fallback_page()
+
+    def _generate_fallback_page(self):
+        """Generate a helpful fallback page when frontend build is missing"""
+        html_content = """
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Collective Memory API Server</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
+                .container { max-width: 800px; margin: 0 auto; background: white; padding: 40px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+                h1 { color: #333; border-bottom: 2px solid #007acc; padding-bottom: 10px; }
+                .status { background: #e8f5e8; padding: 15px; border-radius: 5px; margin: 20px 0; }
+                .warning { background: #fff3cd; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #ffc107; }
+                .api-list { background: #f8f9fa; padding: 20px; border-radius: 5px; }
+                .api-endpoint { margin: 10px 0; padding: 8px; background: white; border-radius: 3px; font-family: monospace; }
+                .method { padding: 2px 8px; border-radius: 3px; color: white; font-size: 12px; margin-right: 10px; }
+                .get { background: #28a745; }
+                .post { background: #007bff; }
+                .put { background: #ffc107; color: black; }
+                code { background: #f1f1f1; padding: 2px 6px; border-radius: 3px; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>🚀 Collective Memory API Server</h1>
+                
+                <div class="status">
+                    <strong>✅ API Server is Running</strong><br>
+                    The backend API is operational and ready to serve requests.
+                </div>
+                
+                <div class="warning">
+                    <strong>⚠️ Frontend Build Missing</strong><br>
+                    The frontend application build is not available. To build the frontend:
+                    <br><br>
+                    <code>cd frontend && npm install && npm run build</code>
+                </div>
+                
+                <h2>Available API Endpoints</h2>
+                <div class="api-list">
+                    <div class="api-endpoint">
+                        <span class="method get">GET</span> <strong>/health</strong> - Server health check
+                    </div>
+                    <div class="api-endpoint">
+                        <span class="method get">GET</span> <strong>/system/status</strong> - System status and metrics
+                    </div>
+                    <div class="api-endpoint">
+                        <span class="method get">GET</span> <strong>/search?q=query</strong> - Search content
+                    </div>
+                    <div class="api-endpoint">
+                        <span class="method post">POST</span> <strong>/api/search</strong> - Advanced search with JSON body
+                    </div>
+                    <div class="api-endpoint">
+                        <span class="method get">GET</span> <strong>/api/v1/chat/conversations</strong> - List conversations
+                    </div>
+                    <div class="api-endpoint">
+                        <span class="method get">GET</span> <strong>/config</strong> - Get configuration
+                    </div>
+                    <div class="api-endpoint">
+                        <span class="method put">PUT</span> <strong>/config</strong> - Update configuration
+                    </div>
+                </div>
+                
+                <h2>Quick Test</h2>
+                <p>Try these endpoints to test the API:</p>
+                <ul>
+                    <li><a href="/health" target="_blank">/health</a> - Check if server is healthy</li>
+                    <li><a href="/system/status" target="_blank">/system/status</a> - View system metrics</li>
+                    <li><a href="/api/v1/chat/" target="_blank">/api/v1/chat/</a> - Chat API info</li>
+                </ul>
+                
+                <h2>Documentation</h2>
+                <p>For complete API documentation and usage examples, please refer to the project README.</p>
+            </div>
+        </body>
+        </html>
+        """
+        return html_content
 
     def run(self, host="127.0.0.1", port=8000, debug=False):
         """Run the API server"""

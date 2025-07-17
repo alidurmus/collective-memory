@@ -33,6 +33,10 @@ class SearchQuery:
     sort_order: str = "desc"  # asc, desc
     limit: int = 50
     use_semantic_search: bool = False  # Semantic search option
+    use_caching: bool = True  # Caching option
+    semantic_similarity_threshold: float = 0.7  # Semantic similarity threshold
+    use_ai_scoring: bool = False  # AI tabanlı skorlamayı kullan
+    extract_entities: bool = False  # Varlık çıkarımı yapılacak mı
 
     def __post_init__(self):
         # No longer needed since we use field(default_factory=list)

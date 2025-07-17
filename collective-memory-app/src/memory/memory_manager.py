@@ -84,7 +84,7 @@ class MemoryManager:
 
         # Initialize core components
         self.database = MemoryDatabase(
-            self.config.get("database_path", "data/memory_system.db")
+            self.config.get("database_path", "../data/memory_system.db")
         )
         self.importance_scorer = ImportanceScorer()
         self.evolution_engine = MemoryEvolutionEngine(self.database)
@@ -120,7 +120,7 @@ class MemoryManager:
     def _load_default_config(self) -> Dict:
         """Load default configuration."""
         return {
-            "database_path": "data/memory_system.db",
+            "database_path": "../data/memory_system.db",
             "cache_size": 1000,
             "auto_linking_enabled": True,
             "linking_threshold": 0.7,

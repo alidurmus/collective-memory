@@ -21,7 +21,7 @@ init()
 class DatabaseManager:
     """Dosya metadata ve içerik veritabanı yöneticisi"""
 
-    def __init__(self, db_path: str = "./data/collective_memory.db"):
+    def __init__(self, db_path: str = "data/collective_memory.db"):
         self.db_path = Path(db_path).resolve()
         self.connection = None
 
