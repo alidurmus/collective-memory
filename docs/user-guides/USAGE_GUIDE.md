@@ -1,4 +1,4 @@
-# 📚 Collective Memory - Detaylı Kullanım Rehberi
+# 📚 Collective Memory - Detailed Usage Guide
 
 **Last Updated:** 14 Temmuz 2025  
 **Version:** v2.1 Enhanced with Directory Management  
@@ -6,303 +6,303 @@
 
 ---
 
-## 🚨 **ÖNEMLİ: Data Klasörü Hakkında**
+## 🚨 **IMPORTANT: Data Directory**
 
-> **UYARI:** `/data` klasörü sadece **örnek ve test amaçlıdır!**
+> **WARNING:** `/data` directory is only for **example and testing purposes!**
 > 
-> - ❌ **Ana program değildir** - Asıl sistem `collective-memory-app/` klasöründedir
-> - ✅ **Demo içerik** - Sadece test ve öğrenme için
-> - ✅ **Gerçek kullanım** - Kendi klasörünüzü belirtin: `--data-path /path/to/your/docs`
+> - ❌ **Not the main program** - The actual system is in the `collective-memory-app/` directory
+> - ✅ **Demo content** - Only for testing and learning
+> - ✅ **Real usage** - Specify your own folder: `--data-path /path/to/your/docs`
 > 
-> **Detaylı bilgi:** [Data Klasörü Açıklaması](DATA_USAGE_NOTE.md)
+> **Detailed information:** [Data Directory Description](DATA_USAGE_NOTE.md)
 
 ---
 
-## 🆕 **YENİ ÖZELLİKLER (v2.1)**
+## 🆕 **NEW FEATURES (v2.1)**
 
-✅ **Otomatik Klasör Organizasyonu** - `.collective-memory/` klasörü otomatik oluşturulur  
-✅ **Arama Sonucu Dışa Aktarma** - `--save-to dosya.md` ile sonuçları kaydet  
-✅ **Gelişmiş Veritabanı Yönetimi** - Daha iyi organizasyon ve önbellekleme  
-✅ **Platform Bağımsızlığı** - Windows, macOS, Linux desteği  
+✅ **Automatic Directory Organization** - `.collective-memory/` directory is automatically created  
+✅ **Export Search Results** - Save results with `--save-to dosya.md`  
+✅ **Advanced Database Management** - Better organization and caching  
+✅ **Platform Independence** - Windows, macOS, Linux support  
 
-### 📁 **Otomatik Dizin Yapısı**
+### 📁 **Automatic Directory Structure**
 
-Sistem ilk çalıştırıldığında projenizde şu yapıyı oluşturur:
+When the system is first run, it creates this structure in your project:
 
 ```
-[Proje Klasörünüz]/
-├── [Mevcut dosyalarınız...]
+[Your Project Directory]/
+├── [Your existing files...]
 └── .collective-memory/
     ├── database/
-    │   └── collective_memory.db    # SQLite veritabanı
-    ├── cache/                      # Arama önbelleği
-    ├── logs/                       # Sistem logları
-    ├── config/                     # Yapılandırma dosyaları
-    │   ├── settings.json          # Sistem ayarları
-    │   └── project_status.json    # Proje durumu
-    └── README.md                   # Sistem dokümantasyonu
+    │   └── collective_memory.db    # SQLite database
+    ├── cache/                      # Search cache
+    ├── logs/                       # System logs
+    ├── config/                     # Configuration files
+    │   ├── settings.json          # System settings
+    │   └── project_status.json    # Project status
+    └── README.md                   # System documentation
 ```
 
 ---
 
-## 🚨 **Hızlı Sorun Çözme (Troubleshooting)**
+## 🚨 **Quick Troubleshooting**
 
-### **En Yaygın Hata: "can't open file" Sorunu**
+### **Common Error: "can't open file"**
 
-❌ **YANLIŞ:**
+❌ **WRONG:**
 ```bash
 PS C:\cursor\collective-memory> python src/main.py --interactive --data-path ../data
 ```
 
-✅ **DOĞRU:**
+✅ **CORRECT:**
 ```bash
 PS C:\cursor\collective-memory> cd collective-memory-app
 PS C:\cursor\collective-memory\collective-memory-app> python src/main.py --interactive --data-path ../data
 ```
 
-### **Temel Sorun Giderme Kontrol Listesi**
+### **Basic Troubleshooting Checklist**
 
-1. **Klasör Konumu Kontrolü:**
+1. **Directory Location Check:**
    ```bash
-   pwd                           # Bulunduğunuz klasörü gösterir
-   ls -la                        # Dosyaları listeler (Linux/Mac)
-   dir                          # Dosyaları listeler (Windows)
+   pwd                           # Shows the current directory
+   ls -la                        # Lists files (Linux/Mac)
+   dir                          # Lists files (Windows)
    ```
 
-2. **Gerekli Dosya Kontrolü:**
+2. **Required File Check:**
    ```bash
-   ls collective-memory-app/src/main.py    # Dosya var mı?
-   python --version                        # Python versiyonu (3.9+ gerekli)
+   ls collective-memory-app/src/main.py    # Does the file exist?
+   python --version                        # Python version (requires 3.9+)
    ```
 
-3. **Dizin Yapısı Kontrolü:**
+3. **Directory Structure Check:**
    ```bash
-   # Collective memory dizini oluştu mu?
-   ls -la [proje-klasörü]/.collective-memory/
+   # Has Collective memory directory been created?
+   ls -la [project-directory]/.collective-memory/
    
-   # Veritabanı dosyası var mı?
-   ls -la [proje-klasörü]/.collective-memory/database/collective_memory.db
+   # Does the database file exist?
+   ls -la [project-directory]/.collective-memory/database/collective_memory.db
    ```
 
 ---
 
-## 🔧 **KURULUM VE İLK KULLANIM**
+## 🔧 **INSTALLATION AND FIRST USE**
 
-### **1. Temel Kurulum**
+### **1. Basic Installation**
 ```bash
-# Projeyi klonlayın
+# Clone the project
 git clone https://github.com/your-username/collective-memory.git
 cd collective-memory
 
-# Ana uygulamaya gidin  
+# Go to the main application
 cd collective-memory-app
 
-# Bağımlılıkları yükleyin
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-### **2. İlk İndeksleme**
+### **2. Initial Indexing**
 ```bash
-# Kendi proje klasörünüzü indeksleyin
+# Index your own project folder
 python src/main.py --index --data-path "C:\path\to\your\project"
 
-# Sistem otomatik olarak .collective-memory/ klasörü oluşturacak
+# The system will automatically create the .collective-memory/ directory
 ```
 
-### **3. Arama ve Sorgu Kullanımı**
+### **3. Search and Query Usage**
 
-#### **A. Temel Arama**
+#### **A. Basic Search**
 ```bash
-# Basit metin arama
-python src/main.py --search "Django ayarları" --data-path "C:\your\project"
+# Simple text search
+python src/main.py --search "Django settings" --data-path "C:\your\project"
 
-# Sonuçları ekranda gösterir
+# Displays results on screen
 ```
 
-#### **B. Arama Sonuçlarını Dosyaya Kaydetme** ⭐ **YENİ**
+#### **B. Saving Search Results to File** ⭐ **NEW**
 ```bash
-# Arama yap ve sonuçları dosyaya kaydet
-python src/main.py --search "hata çözümü" --save-to "error-solutions.md" --data-path "C:\your\project"
+# Search and save results to a file
+python src/main.py --search "error resolution" --save-to "error-solutions.md" --data-path "C:\your\project"
 
-# Dosya .collective-memory/ klasöründe kaydedilir
+# Saved in .collective-memory/ directory
 ```
 
-#### **C. İnteraktif Mod**
+#### **C. Interactive Mode**
 ```bash
-# İnteraktif modda başlat
+# Start interactive mode
 python src/main.py --interactive --data-path "C:\your\project"
 
-# Komutlar:
-# help         - Yardım göster
-# stats        - İstatistikleri göster  
-# search term  - Arama yap
-# quit         - Çıkış
+# Commands:
+# help         - Show help
+# stats        - Show statistics  
+# search term  - Perform search
+# quit         - Exit
 ```
 
-#### **D. Sistem İstatistikleri**
+#### **D. System Statistics**
 ```bash
-# Proje istatistiklerini göster
+# Show project statistics
 python src/main.py --stats --data-path "C:\your\project"
 ```
 
 ---
 
-## 📖 **KULLANIM ÖRNEKLERİ**
+## 📖 **USAGE EXAMPLES**
 
-### **Örnek 1: Django Projesinde Hata Araştırması**
+### **Example 1: Django Project Error Investigation**
 ```bash
-# Django hatalarını ara ve kaydet
+# Search for Django errors and save
 python src/main.py --search "NoReverseMatch error" --save-to "django-errors.md" --data-path "C:\projects\django-app"
 
-# Çıktı: .collective-memory/django-errors.md dosyasında
+# Output: .collective-memory/django-errors.md file
 ```
 
-### **Örnek 2: API Dokümantasyonu Araması**
+### **Example 2: API Documentation Search**
 ```bash
-# API endpoint'lerini ara
+# Search for API endpoints
 python src/main.py --search "API endpoint configuration" --data-path "C:\projects\api-docs"
 
-# İnteraktif modda detay araştırması
+# Interactive mode for detailed investigation
 python src/main.py --interactive --data-path "C:\projects\api-docs"
 ```
 
-### **Örnek 3: Proje Genel Araştırması**
+### **Example 3: General Project Investigation**
 ```bash
-# İlk olarak proje istatistiklerini kontrol et
+# First, check project statistics
 python src/main.py --stats --data-path "C:\projects\my-project"
 
-# Genel arama yap
+# Perform general search
 python src/main.py --search "authentication system" --save-to "auth-research.md" --data-path "C:\projects\my-project"
 ```
 
 ---
 
-## 💻 **Temel Kullanım Komutları**
+## 💻 **Basic Usage Commands**
 
-### **1. İnteraktif Terminal Modu (Ana Özellik)**
+### **1. Interactive Terminal Mode (Main Feature)**
 
 ```bash
 cd collective-memory-app
-# Kendi klasörünüzü kullanın:
+# Use your own folder:
 python src/main.py --interactive --data-path /path/to/your/documents
-# VEYA test için demo data:
+# OR for demo data:
 python src/main.py --interactive --data-path ../data
 
-# Terminal açıldıktan sonra kullanılabilir komutlar:
-search keyword                    # Anahtar kelime arama
-search "birden fazla kelime"     # Çok kelimeli arama
-search keyword --limit=20        # Sonuç sayısını sınırla
-search keyword --type=markdown   # Dosya türü filtresi
-files                           # Tüm dosyaları listele
-files --recent                  # Son değişen dosyalar
-stats                          # Sistem istatistikleri
-cursor_history                 # Cursor chat geçmişi
-cursor_history --limit=20      # Son 20 chat
-cursor_history --workspaces    # Tüm workspace'ler
-help                           # Tüm komutlar
-exit                           # Çıkış
+# Commands available after terminal opens:
+search keyword                    # Keyword search
+search "multiple words"          # Multi-word search
+search keyword --limit=20        # Limit results
+search keyword --type=markdown   # File type filter
+files                           # List all files
+files --recent                  # Recently changed files
+stats                          # System statistics
+cursor_history                 # Cursor chat history
+cursor_history --limit=20      # Last 20 chats
+cursor_history --workspaces    # All workspaces
+help                           # All commands
+exit                           # Exit
 ```
 
-### **2. Tek Seferlik Sorgular**
+### **2. One-time Queries**
 
 ```bash
-# Direkte arama yap:
+# Direct search:
 python src/main.py --search "react component" --data-path ../data
 
-# Dosya listesi al:
+# Get file list:
 python src/main.py --list-files --data-path ../data
 
-# Sistem durumu kontrol et:
+# Check system status:
 python src/main.py --status --data-path ../data
 ```
 
-### **3. Cursor Chat Geçmişi Erişimi**
+### **3. Cursor Chat History Access**
 
 ```bash
-# Cursor chat geçmişini göster:
+# Show cursor chat history:
 python src/main.py --cursor-history --data-path ../data
 
-# Son 10 chat'i göster:
+# Show last 10 chats:
 python src/main.py --cursor-history --limit=10 --data-path ../data
 
-# Workspace'leri listele:
+# List workspaces:
 python src/main.py --cursor-workspaces --data-path ../data
 ```
 
 ---
 
-## 🔧 **Gelişmiş Kullanım Senaryoları**
+## 🔧 **Advanced Usage Scenarios**
 
-### **Senaryo 1: Proje Dokümantasyonu Araması**
+### **Scenario 1: Project Documentation Search**
 
 ```bash
-# Terminal modunda:
-search "API documentation"           # API dokümanları
-search "deployment guide"           # Deployment rehberleri
-search "database schema"            # Veritabanı şemaları
-search "test coverage" --type=md    # Test kapsamı bilgileri
+# In terminal mode:
+search "API documentation"           # API documentation
+search "deployment guide"           # Deployment guides
+search "database schema"            # Database schemas
+search "test coverage" --type=md    # Test coverage information
 ```
 
-### **Senaryo 2: Hata Çözümü ve Troubleshooting**
+### **Scenario 2: Error Resolution and Troubleshooting**
 
 ```bash
-# Hata pattern arama:
-search "error" --limit=50           # Tüm hata raporları
-search "fix" --type=markdown        # Çözüm dokümanları
-search "resolution"                 # Problem çözümleri
+# Search for error patterns:
+search "error" --limit=50           # All error reports
+search "fix" --type=markdown        # Solution documents
+search "resolution"                 # Problem resolutions
 ```
 
-### **Senaryo 3: Kod Referansları ve Örnekler**
+### **Scenario 3: Code References and Examples**
 
 ```bash
-# Kod örneği arama:
-search "javascript"                 # JS kod örnekleri
-search "python function"           # Python fonksiyonları
-search "django model"              # Django model örnekleri
+# Search for code examples:
+search "javascript"                 # JS code examples
+search "python function"           # Python functions
+search "django model"              # Django model examples
 ```
 
-### **Senaryo 4: Cursor Context Collection**
+### **Scenario 4: Cursor Context Collection**
 
 ```bash
-# Cursor'dan context topla ve panoya kopyala:
-# Kod içinde yorum olarak:
-# @collect-memory: React modal component implement et
+# Collect context from Cursor and copy to clipboard:
+# In code comments:
+# @collect-memory: Implement React modal component
 
-# Manuel trigger:
+# Manual trigger:
 python src/main.py --collect-context --request "React modal component" --data-path ../data
 ```
 
 ---
 
-## 📊 **Sistem Monitoring ve İstatistikler**
+## 📊 **System Monitoring and Statistics**
 
-### **Real-time Sistem Durumu**
+### **Real-time System Status**
 
 ```bash
-# İnteraktif modda:
-stats                              # Genel sistem istatistikleri
-files --recent                     # Son değişen dosyalar
-files --count                      # Toplam dosya sayısı
+# In interactive mode:
+stats                              # General system statistics
+files --recent                     # Recently changed files
+files --count                      # Total file count
 ```
 
-### **Performans Metrikleri**
+### **Performance Metrics**
 
 ```bash
-# Sistem performance testi:
+# System performance test:
 python src/main.py --performance-test --data-path ../data
 
-# Database durumu:
+# Database status:
 python src/main.py --db-status --data-path ../data
 
-# İndeksleme durumu:
+# Indexing status:
 python src/main.py --index-status --data-path ../data
 ```
 
 ---
 
-## 🛠️ **Konfigürasyon ve Özelleştirme**
+## 🛠️ **Configuration and Customization**
 
-### **Config Dosyası (config/settings.json)**
+### **Config File (config/settings.json)**
 
 ```json
 {
@@ -317,7 +317,7 @@ python src/main.py --index-status --data-path ../data
 }
 ```
 
-### **Ortam Değişkenleri**
+### **Environment Variables**
 
 ```bash
 # Windows:
@@ -331,50 +331,50 @@ export COLLECTIVE_MEMORY_LOG_LEVEL=DEBUG
 
 ---
 
-## 🔍 **Arama İpuçları ve Best Practices**
+## 🔍 **Search Tips and Best Practices**
 
-### **Etkili Arama Teknikleri**
+### **Effective Search Techniques**
 
-1. **Anahtar Kelime Seçimi:**
+1. **Keyword Selection:**
    ```bash
-   search "implementation"          # Geniş arama
-   search "react implementation"    # Spesifik arama
-   search "react modal component"   # Çok spesifik arama
+   search "implementation"          # Broad search
+   search "react implementation"    # Specific search
+   search "react modal component"   # Very specific search
    ```
 
-2. **Filtre Kullanımı:**
+2. **Filter Usage:**
    ```bash
-   search keyword --type=markdown   # Sadece .md dosyalarda ara
-   search keyword --limit=10        # İlk 10 sonucu göster
-   search keyword --recent          # Son değişen dosyalarda ara
+   search keyword --type=markdown   # Search only in .md files
+   search keyword --limit=10        # Show first 10 results
+   search keyword --recent          # Search in recently changed files
    ```
 
-3. **Boolean Aramalar:**
+3. **Boolean Searches:**
    ```bash
-   search "django AND model"        # Her iki kelimeyi içeren
-   search "react OR vue"           # Herhangi birini içeren
-   search "NOT deprecated"         # İçermeyen
+   search "django AND model"        # Contains both words
+   search "react OR vue"           # Contains either word
+   search "NOT deprecated"         # Does not contain
    ```
 
-### **Sık Kullanılan Arama Komutları**
+### **Common Search Commands**
 
 ```bash
-# Dokümantasyon araması:
+# Documentation search:
 search "documentation" --type=md
 search "README" --type=md
 search "guide" --limit=20
 
-# Kod örnekleri:
+# Code examples:
 search "example" --type=py
 search "sample" --type=js
 search "template" --type=html
 
-# Hata çözümü:
+# Error resolution:
 search "error" --recent
 search "fix" --limit=30
 search "solution" --type=md
 
-# API ve endpoint'ler:
+# APIs and endpoints:
 search "API" --type=md
 search "endpoint" --type=py
 search "route" --type=js
@@ -382,132 +382,132 @@ search "route" --type=js
 
 ---
 
-## 🐛 **Sorun Giderme ve Hata Çözümü**
+## 🐛 **Troubleshooting and Error Resolution**
 
-### **Yaygın Hatalar ve Çözümleri**
+### **Common Errors and Solutions**
 
 #### **1. "FileNotFoundError: No such file or directory"**
 
-**Problem:** main.py dosyası bulunamıyor  
-**Çözüm:**
+**Problem:** main.py file not found  
+**Solution:**
 ```bash
-# Doğru klasöre git:
+# Go to the correct directory:
 cd collective-memory-app
-ls src/main.py                     # Dosya var mı kontrol et
+ls src/main.py                     # Check if file exists
 ```
 
 #### **2. "ModuleNotFoundError: No module named 'watchdog'"**
 
-**Problem:** Bağımlılıklar kurulmamış  
-**Çözüm:**
+**Problem:** Dependencies not installed  
+**Solution:**
 ```bash
 pip install -r requirements.txt
-# veya
+# or
 pip install watchdog colorama pathlib
 ```
 
-#### **3. "Permission denied" veya "Access denied"**
+#### **3. "Permission denied" or "Access denied"**
 
-**Problem:** Dosya izinleri  
-**Çözüm:**
+**Problem:** File permissions  
+**Solution:**
 ```bash
 # Linux/Mac:
 chmod +x setup.sh
 chmod 755 src/main.py
 
-# Windows: PowerShell'i Administrator olarak çalıştır
+# Windows: Run PowerShell as Administrator
 ```
 
-#### **4. "Database locked" hatası**
+#### **4. "Database locked" error**
 
-**Problem:** SQLite veritabanı kilitli  
-**Çözüm:**
+**Problem:** SQLite database locked  
+**Solution:**
 ```bash
-# Veritabanı dosyasını sil ve yeniden oluştur:
+# Delete and recreate the database file:
 rm collective_memory.db
 python src/main.py --rebuild-db --data-path ../data
 ```
 
-#### **5. Cursor chat history erişim hatası**
+#### **5. Cursor chat history access error**
 
-**Problem:** Cursor veritabanına erişim yok  
-**Çözüm:**
+**Problem:** Cursor database access issue  
+**Solution:**
 ```bash
-# Cursor'ın kapalı olduğundan emin ol
-# Yönetici izinleri ile çalıştır
+# Ensure Cursor is open
+# Run with administrator privileges
 python src/main.py --test-cursor --data-path ../data
 ```
 
-### **Debug Modu**
+### **Debug Mode**
 
 ```bash
-# Detaylı log çıktısı için:
+# For detailed log output:
 python src/main.py --debug --interactive --data-path ../data
 
-# Log dosyası oluştur:
+# Create log file:
 python src/main.py --interactive --data-path ../data --log-file debug.log
 ```
 
 ---
 
-## 📈 **Performans Optimizasyonu**
+## 📈 **Performance Optimization**
 
-### **Sistem Performansını Artırma**
+### **Improving System Performance**
 
-1. **Database Optimizasyonu:**
+1. **Database Optimization:**
    ```bash
    python src/main.py --optimize-db --data-path ../data
    ```
 
-2. **İndeks Yenileme:**
+2. **Index Rebuilding:**
    ```bash
    python src/main.py --rebuild-index --data-path ../data
    ```
 
-3. **Cache Temizleme:**
+3. **Cache Clearing:**
    ```bash
    python src/main.py --clear-cache --data-path ../data
    ```
 
-### **Bellek Kullanımı**
+### **Memory Usage**
 
 ```bash
-# Hafif mod (düşük bellek kullanımı):
+# Light mode (low memory usage):
 python src/main.py --memory-efficient --interactive --data-path ../data
 
-# Hızlı mod (yüksek performans):
+# Fast mode (high performance):
 python src/main.py --high-performance --interactive --data-path ../data
 ```
 
 ---
 
-## 🔐 **Güvenlik ve Gizlilik**
+## 🔐 **Security and Privacy**
 
-### **Veri Güvenliği**
+### **Data Security**
 
-- Tüm veriler yerel makinenizde saklanır
-- Hiçbir veri internete gönderilmez
-- Cursor chat geçmişi sadece okunur, değiştirilmez
-- SQLite veritabanı şifreleme opsiyonu mevcuttur
+- All data is stored locally on your machine
+- No data is sent to the internet
+- Cursor chat history is read-only, not modifiable
+- SQLite encryption option is available
 
-### **Güvenlik Ayarları**
+### **Security Settings**
 
 ```bash
-# Veritabanı şifreleme aktif et:
+# Enable database encryption:
 python src/main.py --enable-encryption --data-path ../data
 
-# Yedekleme oluştur:
+# Create backup:
 python src/main.py --backup --data-path ../data
 ```
 
 ---
 
-## 📚 **İleri Seviye Özellikler**
+## 📚 **Advanced Features**
 
-### **API Kullanımı**
+### **API Usage**
 
 ```python
-# Python kodu içinden kullanım:
+# Usage from Python code:
 from src.collective_memory import CollectiveMemory
 
 cm = CollectiveMemory()
@@ -518,7 +518,7 @@ print(results)
 ### **Custom Extensions**
 
 ```python
-# Özel arama filtreleri:
+# Custom search filters:
 def custom_filter(file_path, content):
     return "react" in content.lower()
 
@@ -528,32 +528,32 @@ cm.add_custom_filter("react_filter", custom_filter)
 ### **Batch Operations**
 
 ```bash
-# Toplu işlemler:
+# Batch operations:
 python src/main.py --batch-search queries.txt --data-path ../data
 python src/main.py --batch-index folder/ --data-path ../data
 ```
 
 ---
 
-## 📞 **Destek ve Yardım**
+## �� **Support and Help**
 
-### **Yardım Komutları**
-
-```bash
-python src/main.py --help              # Genel yardım
-python src/main.py --version           # Versiyon bilgisi
-python src/main.py --system-info       # Sistem bilgileri
-```
-
-### **Log Dosyaları**
+### **Help Commands**
 
 ```bash
-# Log dosyalarını kontrol et:
-tail -f logs/collective-memory.log     # Real-time loglar
-cat logs/error.log                     # Hata logları
+python src/main.py --help              # General help
+python src/main.py --version           # Version information
+python src/main.py --system-info       # System information
 ```
 
-### **Sistem Sağlık Kontrolü**
+### **Log Files**
+
+```bash
+# Check log files:
+tail -f logs/collective-memory.log     # Real-time logs
+cat logs/error.log                     # Error logs
+```
+
+### **System Health Check**
 
 ```bash
 python src/main.py --health-check --data-path ../data
@@ -561,21 +561,21 @@ python src/main.py --health-check --data-path ../data
 
 ---
 
-## 🎯 **Sonuç ve Best Practices**
+## 🎯 **Results and Best Practices**
 
-### **En İyi Kullanım Pratikleri:**
+### **Best Usage Practices:**
 
-1. **Düzenli İnteraktif Kullanım:** `--interactive` modunu tercih edin
-2. **Spesifik Aramalar:** Genel kelimeler yerine spesifik terimler kullanın
-3. **Filtre Kullanımı:** `--type` ve `--limit` parametrelerini aktif kullanın
-4. **Regular Maintenance:** Haftalık `--optimize-db` çalıştırın
+1. **Regular Interactive Usage:** Prefer the `--interactive` mode
+2. **Specific Searches:** Use specific terms instead of general words
+3. **Filter Usage:** Activate `--type` and `--limit` parameters
+4. **Regular Maintenance:** Run `--optimize-db` weekly
 
-### **Performans İpuçları:**
+### **Performance Tips:**
 
-- Büyük projeler için `--memory-efficient` mod kullanın
-- Çok sık kullanılan aramalar için alias oluşturun
-- Database'i düzenli olarak optimize edin
+- For large projects, use `--memory-efficient` mode
+- Create aliases for frequently used searches
+- Regularly optimize your database
 
 ---
 
-**Bu rehber sürekli güncellenmektedir. Son versiyon için GitHub repository'sine başvurun.** 
+**This guide is continuously updated. Refer to the GitHub repository for the latest version.** 

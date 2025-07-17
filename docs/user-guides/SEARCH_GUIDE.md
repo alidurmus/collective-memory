@@ -1,190 +1,190 @@
-# 🔍 Arama Rehberi - Collective Memory
+# 🔍 Search Guide - Collective Memory
 
-**Versiyon:** v2.1  
-**Tarih:** 14 Temmuz 2025  
-**Kategori:** Kullanıcı Rehberleri  
+**Version:** v2.1  
+**Date:** 14 July 2025  
+**Category:** User Guides  
 
 ---
 
-## 🎯 Genel Bakış
+## 🎯 General Overview
 
-Collective Memory sisteminin güçlü arama özelliklerini etkili şekilde kullanmak için hazırlanmış rehber.
+This guide is prepared to effectively utilize the powerful search features of the Collective Memory system.
 
-## 📋 Arama Türleri
+## 📋 Search Types
 
-### 1. **Temel Arama**
+### 1. **Basic Search**
 ```bash
-python src/main.py --search "Django model" --data-path "C:\projeler"
+python src/main.py --search "Django model" --data-path "C:\projects"
 ```
 
-### 2. **Semantic Arama**
+### 2. **Semantic Search**
 ```bash
-python src/main.py --search "Python hata çözümü" --semantic --data-path "C:\projeler"
+python src/main.py --search "Python error resolution" --semantic --data-path "C:\projects"
 ```
 
-### 3. **Sonuçları Kaydetme**
+### 3. **Saving Results**
 ```bash
-python src/main.py --search "API dokümantasyonu" --save-to "api-docs.md" --data-path "C:\projeler"
+python src/main.py --search "API documentation" --save-to "api-docs.md" --data-path "C:\projects"
 ```
 
-## 🔧 Arama Filtreleri
+## 🔧 Search Filters
 
-### Dosya Türü Filtresi
-- `.md` - Markdown dosyalar
-- `.py` - Python dosyaları
-- `.js` - JavaScript dosyaları
-- `.txt` - Metin dosyaları
+### File Type Filters
+- `.md` - Markdown files
+- `.py` - Python files
+- `.js` - JavaScript files
+- `.txt` - Text files
 
-### Tarih Filtresi
-- Son 24 saat
-- Son hafta
-- Son ay
-- Özel tarih aralığı
+### Date Filters
+- Last 24 hours
+- Last week
+- Last month
+- Custom date range
 
-### Boyut Filtresi
-- Küçük dosyalar (< 10KB)
-- Orta dosyalar (10KB - 1MB)
-- Büyük dosyalar (> 1MB)
+### Size Filters
+- Small files (< 10KB)
+- Medium files (10KB - 1MB)
+- Large files (> 1MB)
 
-## 🎯 Arama İpuçları
+## 🎯 Search Tips
 
-### 1. **Etkili Anahtar Kelimeler**
-- Spesifik terimler kullanın
-- Kısaltmalar yerine tam kelimeler
-- Türkçe ve İngilizce karışık arama
+### 1. **Efficient Keywords**
+- Use specific terms
+- Avoid abbreviations, use full words
+- Mixed Turkish and English search
 
-### 2. **Boolean Operatörler**
-- `VE` - Her iki kelimeyi de içeren
-- `VEYA` - Herhangi birini içeren
-- `DEĞİL` - İçermeyen
+### 2. **Boolean Operators**
+- `AND` - Contains both words
+- `OR` - Contains any of them
+- `NOT` - Does not contain
 
-### 3. **Wildcard Kullanımı**
-- `*` - Herhangi bir karakter dizisi
-- `?` - Tek karakter
-- `[abc]` - Belirtilen karakterlerden biri
+### 3. **Wildcard Usage**
+- `*` - Any character sequence
+- `?` - Single character
+- `[abc]` - One of the specified characters
 
-## 📊 Arama Sonuçları
+## 📊 Search Results
 
 ### Relevance Score
-- **0.9-1.0:** Mükemmel eşleşme
-- **0.7-0.9:** Yüksek uygunluk
-- **0.5-0.7:** Orta uygunluk
-- **0.3-0.5:** Düşük uygunluk
+- **0.9-1.0:** Perfect match
+- **0.7-0.9:** High relevance
+- **0.5-0.7:** Medium relevance
+- **0.3-0.5:** Low relevance
 
-### Sonuç Formatı
+### Result Format
 ```
-Dosya: path/to/file.md
+File: path/to/file.md
 Score: 0.95
-Snippet: "Arama sonucu önizlemesi..."
-Boyut: 2.3 KB
-Değişiklik: 2 saat önce
+Snippet: "Search result preview..."
+Size: 2.3 KB
+Last Modified: 2 hours ago
 ```
 
-## 🚀 Gelişmiş Özellikler
+## 🚀 Advanced Features
 
-### 1. **İnteraktif Arama**
+### 1. **Interactive Search**
 ```bash
-python src/main.py --interactive --data-path "C:\projeler"
+python src/main.py --interactive --data-path "C:\projects"
 > search "machine learning"
 > search "Django settings" --type=py
 ```
 
-### 2. **Arama Geçmişi**
+### 2. **Search History**
 ```bash
 > history
 > search-history --limit=10
 ```
 
-### 3. **Kayıtlı Aramalar**
+### 3. **Saved Searches**
 ```bash
 > save-search "API docs" "API endpoint documentation"
 > list-saved-searches
 ```
 
-## 🔍 Arama Stratejileri
+## 🔍 Search Strategies
 
-### Kod Araması
+### Code Search
 ```bash
 search "class definition" --type=py
 search "function implementation" --type=js
 search "import statement" --type=py
 ```
 
-### Dokümantasyon Araması
+### Documentation Search
 ```bash
 search "installation guide" --type=md
 search "API reference" --type=md
 search "troubleshooting" --type=md
 ```
 
-### Hata Araması
+### Error Search
 ```bash
 search "error" --type=log
 search "exception" --type=py
 search "bug fix" --type=md
 ```
 
-## 📈 Performans İpuçları
+## 📈 Performance Tips
 
-### 1. **Hızlı Arama**
-- Kısa anahtar kelimeler
-- Dosya türü filtresi
-- Boyut limiti
+### 1. **Fast Search**
+- Short keywords
+- File type filters
+- Size limit
 
-### 2. **Kapsamlı Arama**
-- Uzun anahtar kelimeler
-- Semantic arama
-- Geniş tarih aralığı
+### 2. **Comprehensive Search**
+- Long keywords
+- Semantic search
+- Wide date range
 
-### 3. **Bellek Optimizasyonu**
-- Küçük proje klasörleri
-- Sık kullanılan terimler
-- Cache kullanımı
+### 3. **Memory Optimization**
+- Small project folders
+- Frequently used terms
+- Cache usage
 
-## 🛠️ Sorun Giderme
+## 🛠️ Troubleshooting
 
-### Yaygın Sorunlar
-1. **Sonuç Bulunamadı**
-   - Anahtar kelimeyi kontrol edin
-   - Dosya türü filtresini genişletin
-   - Semantic arama deneyin
+### Common Issues
+1. **No Results Found**
+   - Check keywords
+   - Expand file type filters
+   - Try semantic search
 
-2. **Yavaş Arama**
-   - Daha spesifik terimler
-   - Dosya türü filtresi
-   - Küçük klasörler
+2. **Slow Search**
+   - More specific terms
+   - File type filters
+   - Smaller folders
 
-3. **Yanlış Sonuçlar**
-   - Daha uzun anahtar kelimeler
-   - Boolean operatörler
-   - Tam eşleşme modu
+3. **Incorrect Results**
+   - Longer keywords
+   - Boolean operators
+   - Exact match mode
 
-## 🎯 Örnekler
+## 🎯 Examples
 
-### Proje Geliştirme
+### Project Development
 ```bash
-# Django projesi
+# Django project
 search "Django model" --type=py --save-to "django-models.md"
 
-# React komponenti
+# React component
 search "React component" --type=js --save-to "react-components.md"
 
-# API dokümantasyonu
+# API documentation
 search "API endpoint" --type=md --save-to "api-endpoints.md"
 ```
 
-### Hata Çözümü
+### Error Resolution
 ```bash
-# Python hataları
+# Python errors
 search "Python error" --type=py --save-to "python-errors.md"
 
-# JavaScript hataları
+# JavaScript errors
 search "JavaScript error" --type=js --save-to "js-errors.md"
 
-# Sistem hataları
+# System errors
 search "system error" --type=log --save-to "system-errors.md"
 ```
 
 ---
 
-**📝 Bu rehber sürekli güncellenmektedir. Yeni özellikler eklendiğinde dokümantasyon güncellenecektir.** 
+**📝 This guide is continuously updated. When new features are added, the documentation will be updated.** 

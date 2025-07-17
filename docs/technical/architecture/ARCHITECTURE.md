@@ -1,6 +1,6 @@
 # Collective Memory v2.1 Architecture
 
-Bu dokümantasyon Collective Memory v2.1'in sistem mimarisini, bileşenlerini ve teknoloji yığınını detaylandırır.
+This document details the system architecture of Collective Memory v2.1, its components, and the technology stack.
 
 ## 🏗️ High-Level Architecture
 
@@ -777,4 +777,4 @@ class Events:
 
 ---
 
-**Bu architecture dokümantasyonu Collective Memory v2.1'in teknik altyapısını detaylandırır ve gelecekteki geliştirmeler için rehber niteliğindedir.** 🏗️ 
+**This architecture documentation details the technical infrastructure of Collective Memory v2.1 and serves as a guide for future improvements.** 🏗️ 

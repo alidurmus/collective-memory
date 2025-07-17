@@ -1,7 +1,7 @@
 # Technology Stack - Collective Memory System v2.1
 
 ## Project Overview
-**Collective Memory** is an advanced context management system designed to solve Cursor AI's memory and context loss problems through intelligent file monitoring, database indexing, and chat history integration.
+**Collective Memory** is an advanced context management system designed to solve AI agent's memory and context loss problems through intelligent file monitoring, database indexing, and chat history integration.
 
 **Version 2.1 Features:**
 - ✅ **Automatic Directory Management** - `.collective-memory/` folder structure
@@ -16,7 +16,7 @@
 ### Backend Framework
 - **Python 3.9+** - Primary programming language with type hints
 - **Django 4.2+** - Web framework for the main ERP application  
-- **SQLite** - Lightweight database for both application data and Cursor workspace storage
+- **SQLite** - Lightweight database for both application data and AI agent workspace storage
 
 ### Directory Management
 - **`.collective-memory/` Structure** - Organized data management ⭐ **NEW**
@@ -34,7 +34,7 @@
 ### Database & Storage
 - **SQLite** - Primary database engine
   - Application database for ERP modules
-  - Cursor workspace database reading
+  - AI agent workspace database reading
   - Organized in `.collective-memory/database/` ⭐ **NEW**
 - **File System** - Real-time monitoring of user-specified directories
 - **JSON** - Configuration and metadata storage in `.collective-memory/config/` ⭐ **NEW**
@@ -45,7 +45,7 @@
 ## 🛠️ Development Tools
 
 ### IDE & Code Editor  
-- **Cursor AI** - Primary development environment with AI assistance
+- **AI agent** - Primary development environment with AI assistance
 - **VS Code** - Alternative editor support
 
 ### Version Control
@@ -125,8 +125,8 @@ black>=23.0.0
    - Filter and sort operations
    - Results ranking
 
-5. **Cursor Reader** (`cursor_reader.py`)
-   - Cross-platform Cursor workspace detection
+5. **AI agent Reader** (`cursor_reader.py`)
+   - Cross-platform AI agent workspace detection
    - Chat history extraction and parsing
    - AI conversation analysis
 
@@ -137,7 +137,7 @@ black>=23.0.0
 
 ### Integration Points
 - **Django ERP System** - Main application integration
-- **Cursor AI Workspaces** - Chat history access
+- **AI agent Workspaces** - Chat history access
 - **File System** - Real-time monitoring
 - **Terminal** - Command-line interface
 

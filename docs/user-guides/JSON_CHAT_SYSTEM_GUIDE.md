@@ -8,7 +8,7 @@
 
 ## 🎯 **Genel Bakış**
 
-JSON Konuşma Sistemi, Collective Memory projesi için geliştirilmiş, konuşmaları human-readable JSON dosyalarında saklayan modern bir hafıza yönetim çözümüdür. Bu sistem, Cursor AI chat geçmişini organize eder ve geliştiricilere güçlü arama ve analiz yetenekleri sunar.
+JSON Konuşma Sistemi, Collective Memory projesi için geliştirilmiş, konuşmaları human-readable JSON dosyalarında saklayan modern bir hafıza yönetim çözümüdür. Bu sistem, AI agent chat geçmişini organize eder ve geliştiricilere güçlü arama ve analiz yetenekleri sunar.
 
 ### ✨ **Ana Özellikler**
 

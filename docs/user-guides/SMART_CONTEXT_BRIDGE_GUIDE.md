@@ -8,7 +8,7 @@
 
 ## 🎯 **Smart Context Bridge Nedir?**
 
-Smart Context Bridge, **chatlar arasında otomatik bilgi köprüsü** kuran devrimci bir sistemdir. Cursor AI ile konuştuğunuz her chat otomatik olarak bir sonrakine context olarak aktarılır. **Hiçbir manuel işlem gerektirmez!**
+Smart Context Bridge, **chatlar arasında otomatik bilgi köprüsü** kuran devrimci bir sistemdir. AI agent ile konuştuğunuz her chat otomatik olarak bir sonrakine context olarak aktarılır. **Hiçbir manuel işlem gerektirmez!**
 
 ### **🚨 Çözdüğü Problem**
 - ❌ **Her chat'te proje kurallarını yeniden açıklama**
@@ -59,7 +59,7 @@ def update_cursor_rules(context):
 ### **📊 Data Flow**
 ```mermaid
 graph TD
-    A[Chat with Cursor AI] --> B[JSON File Updated]
+    A[Chat with AI agent] --> B[JSON File Updated]
     B --> C[Monitor Detects Change]
     C --> D[Extract Important Context]
     D --> E[Generate Smart Summary]
@@ -85,7 +85,7 @@ python src/context_bridge_monitor.py --start
 
 ### **Step 2: İlk Chat**
 ```
-// Normal şekilde Cursor AI ile konuş
+// Normal şekilde AI agent ile konuş
 // Proje hakkında, kod hakkında, her şey hakkında...
 // Chat bitince otomatik olarak JSON'a kaydedilir
 ```
@@ -424,7 +424,7 @@ git checkout -b feature/context-bridge-enhancement
 
 ---
 
-**🎯 Smart Context Bridge ile Cursor AI hafıza sorunu tamamen çözüldü!**  
+**🎯 Smart Context Bridge ile AI agent hafıza sorunu tamamen çözüldü!**  
 **⚡ Zero manual work, %100 automatic cross-chat memory!** 
 
 *Bu döküman Collective Memory v4.0 Smart Context Bridge sistemini kapsamaktadır.* 

@@ -1,72 +1,72 @@
-# 📤 Dışa Aktarma Rehberi - Collective Memory
+# 📤 Export Guide - Collective Memory
 
-**Versiyon:** v2.1  
-**Tarih:** 14 Temmuz 2025  
-**Kategori:** Kullanıcı Rehberleri  
+**Version:** v2.1  
+**Date:** 14 July 2025  
+**Category:** User Guides  
 
 ---
 
-## 🎯 Genel Bakış
+## 🎯 General Overview
 
-Collective Memory sistemindeki arama sonuçlarını ve verileri çeşitli formatlarda dışa aktarma rehberi.
+Export guide for search results and data in various formats in the Collective Memory system.
 
-## 📋 Desteklenen Formatlar
+## 📋 Supported Formats
 
 ### 1. **Markdown (.md)**
-- Okunabilir format
-- GitHub uyumlu
-- Bağlantılar ve resimler
-- Kod bloğu desteği
+- Readable format
+- GitHub compatible
+- Links and images
+- Code block support
 
 ### 2. **Plain Text (.txt)**
-- Basit metin formatı
-- Evrensel uyumluluk
-- Küçük dosya boyutu
-- Hızlı yükleme
+- Simple text format
+- Universal compatibility
+- Small file size
+- Fast loading
 
 ### 3. **JSON (.json)**
-- Programatik erişim
-- Yapılandırılmış veri
-- API entegrasyonu
-- Otomatik işlem
+- Programmatic access
+- Structured data
+- API integration
+- Automatic processing
 
 ### 4. **CSV (.csv)**
-- Spreadsheet uyumluluğu
-- Tablo formatı
-- Excel/Sheets açılabilir
-- Veri analizi
+- Spreadsheet compatibility
+- Table format
+- Excel/Sheets openable
+- Data analysis
 
-## 🔧 Dışa Aktarma Komutları
+## 🔧 Export Commands
 
-### Temel Dışa Aktarma
+### Basic Export
 ```bash
-# Markdown formatında
-python src/main.py --search "Django" --save-to "django-docs.md" --data-path "C:\projeler"
+# Markdown format
+python src/main.py --search "Django" --save-to "django-docs.md" --data-path "C:\projects"
 
-# Metin formatında
-python src/main.py --search "Python" --save-to "python-docs.txt" --data-path "C:\projeler"
+# Text format
+python src/main.py --search "Python" --save-to "python-docs.txt" --data-path "C:\projects"
 
-# JSON formatında
-python src/main.py --search "API" --save-to "api-docs.json" --data-path "C:\projeler"
+# JSON format
+python src/main.py --search "API" --save-to "api-docs.json" --data-path "C:\projects"
 ```
 
-### Gelişmiş Dışa Aktarma
+### Advanced Export
 ```bash
-# Filtreleme ile
-python src/main.py --search "error" --type=py --save-to "python-errors.md" --data-path "C:\projeler"
+# With filtering
+python src/main.py --search "error" --type=py --save-to "python-errors.md" --data-path "C:\projects"
 
-# Tarih aralığı ile
-python src/main.py --search "bug fix" --date-range="2025-01-01,2025-12-31" --save-to "bugs-2025.md" --data-path "C:\projeler"
+# With date range
+python src/main.py --search "bug fix" --date-range="2025-01-01,2025-12-31" --save-to "bugs-2025.md" --data-path "C:\projects"
 
-# Semantic arama ile
-python src/main.py --search "machine learning" --semantic --save-to "ml-docs.md" --data-path "C:\projeler"
+# With semantic search
+python src/main.py --search "machine learning" --semantic --save-to "ml-docs.md" --data-path "C:\projects"
 ```
 
-## 📊 Dışa Aktarma Seçenekleri
+## 📊 Export Options
 
-### Dosya Yapısı
+### File Structure
 ```
-[Proje Klasörü]/.collective-memory/
+[Project Folder]/.collective-memory/
 ├── exports/
 │   ├── search-results/
 │   │   ├── django-docs.md
@@ -79,25 +79,25 @@ python src/main.py --search "machine learning" --semantic --save-to "ml-docs.md"
 │       └── full-backup.json
 ```
 
-### Otomatik İsimlendirme
+### Automatic Naming
 ```bash
-# Tarih damgalı dosyalar
+# Timestamped files
 --save-to "search-results-{date}.md"
-# Çıktı: search-results-2025-07-14.md
+# Output: search-results-2025-07-14.md
 
-# Sorgu bazlı isimlendirme
+# Query-based naming
 --save-to "{query}-results.md"
-# Çıktı: Django-results.md
+# Output: Django-results.md
 ```
 
-## 🚀 Gelişmiş Özellikler
+## 🚀 Advanced Features
 
 ### 1. **Batch Export**
 ```bash
-# Birden fazla arama sonucu
-python src/main.py --batch-export searches.txt --data-path "C:\projeler"
+# Multiple search results
+python src/main.py --batch-export searches.txt --data-path "C:\projects"
 
-# searches.txt içeriği:
+# searches.txt content:
 # Django models
 # Python functions
 # API endpoints
@@ -105,17 +105,17 @@ python src/main.py --batch-export searches.txt --data-path "C:\projeler"
 
 ### 2. **Scheduled Export**
 ```bash
-# Günlük export
-python src/main.py --schedule-export daily --format=md --data-path "C:\projeler"
+# Daily export
+python src/main.py --schedule-export daily --format=md --data-path "C:\projects"
 
-# Haftalık export
-python src/main.py --schedule-export weekly --format=csv --data-path "C:\projeler"
+# Weekly export
+python src/main.py --schedule-export weekly --format=csv --data-path "C:\projects"
 ```
 
 ### 3. **Template Based Export**
 ```bash
-# Özel template kullanma
-python src/main.py --search "API" --template="api-report.template" --save-to "api-report.md" --data-path "C:\projeler"
+# Use custom template
+python src/main.py --search "API" --template="api-report.template" --save-to "api-report.md" --data-path "C:\projects"
 ```
 
 ## 📝 Export Templates
@@ -124,17 +124,17 @@ python src/main.py --search "API" --template="api-report.template" --save-to "ap
 ```markdown
 # {{title}}
 
-**Arama Sorgusu:** {{query}}  
-**Tarih:** {{date}}  
-**Sonuç Sayısı:** {{result_count}}
+**Search Query:** {{query}}  
+**Date:** {{date}}  
+**Result Count:** {{result_count}}
 
-## Sonuçlar
+## Results
 
 {{#results}}
 ### {{filename}}
-- **Yol:** {{path}}
-- **Boyut:** {{size}}
-- **Değişiklik:** {{modified}}
+- **Path:** {{path}}
+- **Size:** {{size}}
+- **Modification:** {{modified}}
 - **Score:** {{score}}
 
 {{snippet}}
@@ -164,95 +164,95 @@ python src/main.py --search "API" --template="api-report.template" --save-to "ap
 }
 ```
 
-## 🔍 Console Entegrasyonu
+## 🔍 Console Integration
 
-### Console ile Export
+### Console Export
 ```bash
 comprehensive> doc-export DOC_ID --format=md --output="exported-doc.md"
 comprehensive> search-export "Django models" --format=json --output="django-models.json"
 comprehensive> batch-export --query-file="searches.txt" --format=csv
 ```
 
-### Otomatik Export
+### Automatic Export
 ```bash
-# Otomatik sistem raporu
+# Automatic system report
 comprehensive> auto-export --type=system-report --schedule=daily
 
-# Otomatik hata raporu
+# Automatic error report
 comprehensive> auto-export --type=error-report --schedule=weekly
 ```
 
-## 📈 Export Metrikleri
+## 📈 Export Metrics
 
-### Dosya Boyutu
-- **Markdown:** Orta boyut, okunabilir
-- **JSON:** Küçük boyut, yapılandırılmış
-- **CSV:** Çok küçük, tablo formatı
-- **TXT:** En küçük, basit metin
+### File Size
+- **Markdown:** Medium size, readable
+- **JSON:** Small size, structured
+- **CSV:** Very small, table format
+- **TXT:** Smallest, simple text
 
-### Performans
-- **Hızlı:** TXT, CSV
-- **Orta:** Markdown
-- **Yavaş:** JSON (büyük veri setleri)
+### Performance
+- **Fast:** TXT, CSV
+- **Medium:** Markdown
+- **Slow:** JSON (large data sets)
 
-### Uyumluluk
-- **Evrensel:** TXT
-- **Geliştirici:** JSON
-- **Dokümantasyon:** Markdown
-- **Analiz:** CSV
+### Compatibility
+- **Universal:** TXT
+- **Developer:** JSON
+- **Documentation:** Markdown
+- **Analysis:** CSV
 
-## 🛠️ Sorun Giderme
+## 🛠️ Troubleshooting
 
-### Yaygın Sorunlar
+### Common Issues
 
-1. **Dosya Oluşturulamadı**
+1. **File Not Created**
    ```bash
-   # Çözüm: Yazma izni kontrol et
+   # Solution: Check write permissions
    ls -la .collective-memory/exports/
    chmod 755 .collective-memory/exports/
    ```
 
-2. **Büyük Dosya Boyutu**
+2. **Large File Size**
    ```bash
-   # Çözüm: Filtreleme kullan
+   # Solution: Use filtering
    --limit=50 --type=md --date-range="2025-07-01,2025-07-31"
    ```
 
-3. **Bozuk Format**
+3. **Corrupted Format**
    ```bash
-   # Çözüm: Template kontrol et
+   # Solution: Check template
    --template="default.template" --validate
    ```
 
-## 🎯 Kullanım Örnekleri
+## 🎯 Usage Examples
 
-### Proje Dokümantasyonu
+### Project Documentation
 ```bash
-# API dokümantasyonu
-python src/main.py --search "API endpoint" --save-to "api-docs.md" --data-path "C:\projeler"
+# API documentation
+python src/main.py --search "API endpoint" --save-to "api-docs.md" --data-path "C:\projects"
 
-# Hata dokümantasyonu
-python src/main.py --search "error solution" --save-to "error-fixes.md" --data-path "C:\projeler"
+# Error documentation
+python src/main.py --search "error solution" --save-to "error-fixes.md" --data-path "C:\projects"
 ```
 
-### Rapor Oluşturma
+### Report Generation
 ```bash
-# Günlük rapor
-python src/main.py --daily-report --save-to "daily-report-{date}.md" --data-path "C:\projeler"
+# Daily report
+python src/main.py --daily-report --save-to "daily-report-{date}.md" --data-path "C:\projects"
 
-# Haftalık özet
-python src/main.py --weekly-summary --save-to "weekly-summary.csv" --data-path "C:\projeler"
+# Weekly summary
+python src/main.py --weekly-summary --save-to "weekly-summary.csv" --data-path "C:\projects"
 ```
 
-### Yedekleme
+### Backup
 ```bash
-# Tam yedekleme
-python src/main.py --full-backup --save-to "backup-{date}.json" --data-path "C:\projeler"
+# Full backup
+python src/main.py --full-backup --save-to "backup-{date}.json" --data-path "C:\projects"
 
-# Seçili yedekleme
-python src/main.py --backup-search "important" --save-to "important-backup.json" --data-path "C:\projeler"
+# Selected backup
+python src/main.py --backup-search "important" --save-to "important-backup.json" --data-path "C:\projects"
 ```
 
 ---
 
-**📝 Bu rehber tüm dışa aktarma özelliklerini kapsar. Yeni formatlar eklendiğinde güncellenir.** 
+**📝 This guide covers all export features. It is updated when new formats are added.** 

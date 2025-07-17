@@ -1,145 +1,145 @@
-# 🚀 Collective Memory - Hızlı Başlangıç Rehberi
+# 🚀 Collective Memory - Quick Start Guide
 
-**5 dakikada sistemi çalıştırın!** ⚡  
+**Run the system in 5 minutes!** ⚡  
 **Version:** 2.1 - Directory Management & Search Export  
 
 ---
 
-## 🆕 **YENİ ÖZELLİKLER (v2.1)**
+## 🆕 **New Features (v2.1)**
 
-✅ **Otomatik `.collective-memory/` klasörü** - Organize veri yönetimi  
-✅ **Arama sonucu kaydetme** - `--save-to` ile dosyaya export  
-✅ **Gelişmiş konfigürasyon** - JSON ayar dosyaları  
-✅ **Cross-platform uyumluluk** - Windows, macOS, Linux  
+✅ **Automatic `.collective-memory/` directory** - Organize data management  
+✅ **Save search results** - Export with `--save-to`  
+✅ **Advanced configuration** - JSON configuration files  
+✅ **Cross-platform compatibility** - Windows, macOS, Linux  
 
 ---
 
-## 🔥 **En Hızlı Başlangıç**
+## 🔥 **Quick Start**
 
 ```bash
-# 1. Doğru klasöre gidin (ÖNEMLİ!)
+# 1. Navigate to the correct directory (IMPORTANT!)
 cd collective-memory-app
 
-# 2. Kendi projenizi indeksleyin
+# 2. Index your project
 python src/main.py --index --data-path "C:\path\to\your\project"
-# ✅ Otomatik olarak .collective-memory/ klasörü oluşturulur
+# ✅ Automatically creates .collective-memory/ directory
 
-# 3. Arama yapın
-python src/main.py --search "Django ayarları" --data-path "C:\path\to\your\project"
+# 3. Perform a search
+python src/main.py --search "Django settings" --data-path "C:\path\to\your\project"
 
-# 4. Sonuçları kaydedin (YENİ!)
-python src/main.py --search "hata çözümü" --save-to "errors.md" --data-path "C:\path\to\your\project"
+# 4. Save results (NEW!)
+python src/main.py --search "error resolution" --save-to "errors.md" --data-path "C:\path\to\your\project"
 ```
 
 ---
 
-## 🚨 **En Yaygın Hata ve Çözümü**
+## 🚨 **Common Errors and Solutions**
 
 ### ❌ **Problem:**
 ```bash
 PS C:\cursor\collective-memory> python src/main.py --interactive --data-path ../data
-# Hata: can't open file 'src/main.py': No such file or directory
+# Error: can't open file 'src/main.py': No such file or directory
 ```
 
-### ✅ **Çözüm:**
+### ✅ **Solution:**
 ```bash
 PS C:\cursor\collective-memory> cd collective-memory-app
 PS C:\cursor\collective-memory\collective-memory-app> python src/main.py --interactive --data-path "C:\your\project"
-# ✅ Başarılı! Sistem .collective-memory/ klasörü oluşturacak
+# ✅ Success! System will create .collective-memory/ directory
 ```
 
-### 🔍 **Neden oluyor?**
-`main.py` dosyası `collective-memory-app/src/` klasöründe, ana klasörde değil!
+### 🔍 **Why is this happening?**
+`main.py` file is in `collective-memory-app/src/`, not in the main directory!
 
 ---
 
-## ⚡ **4 Adımda Kurulum**
+## ⚡ **4-Step Installation**
 
-### **Adım 1: Klasöre Gidin**
+### **Step 1: Navigate to the Directory**
 ```bash
 cd collective-memory/collective-memory-app
 ```
 
-### **Adım 2: Projenizi İndeksleyin**
+### **Step 2: Index Your Project**
 ```bash
-# Kendi projeniz için
+# For your project
 python src/main.py --index --data-path "C:\Users\YourName\MyProject"
 
-# ✅ Otomatik oluşturulur:
+# ✅ Automatically created:
 # C:\Users\YourName\MyProject\.collective-memory\
 #   ├── database/collective_memory.db
 #   ├── config/settings.json
-#   └── [diğer sistem dosyaları]
+#   └── [other system files]
 ```
 
-### **Adım 3: Arama Yapın**
+### **Step 3: Perform a Search**
 ```bash
-# Basit arama
-python src/main.py --search "anahtar kelime" --data-path "C:\Users\YourName\MyProject"
+# Simple search
+python src/main.py --search "keyword" --data-path "C:\Users\YourName\MyProject"
 
-# Sonuçları dosyaya kaydet (YENİ!)
+# Save results to a file (NEW!)
 python src/main.py --search "Django error" --save-to "django-errors.md" --data-path "C:\Users\YourName\MyProject"
 ```
 
-### **Adım 4: İnteraktif Modu Kullanın**
+### **Step 4: Use Interactive Mode**
 ```bash
-# İnteraktif mod başlat
+# Start interactive mode
 python src/main.py --interactive --data-path "C:\Users\YourName\MyProject"
 
-# Komutlar:
-> help         # Yardım
-> stats        # İstatistikler
-> search term  # Arama
-> quit         # Çıkış
+# Commands:
+> help         # Help
+> stats        # Statistics
+> search term  # Search
+> quit         # Exit
 ```
 
 ---
 
-## 📁 **Otomatik Oluşturulan Yapı** ⭐ **YENİ**
+## 📁 **Automatically Generated Structure** ⭐ **NEW**
 
-Sistem ilk çalıştığında projenizde otomatik oluşturur:
+The system automatically creates this structure when it first runs:
 
 ```
-[Proje Klasörünüz]/
-├── [Mevcut dosyalarınız...]
+[Your Project Directory]/
+├── [Your existing files...]
 └── .collective-memory/
     ├── database/
-    │   └── collective_memory.db     # Arama veritabanı
+    │   └── collective_memory.db     # Search database
     ├── config/
-    │   ├── settings.json            # Sistem ayarları
-    │   └── project_status.json      # Durum bilgisi
-    ├── cache/                       # Arama önbelleği
-    ├── logs/                        # Sistem logları
-    ├── [search-results].md          # Kaydedilen aramalar
-    └── README.md                    # Sistem açıklaması
+    │   ├── settings.json            # System settings
+    │   └── project_status.json      # Status information
+    ├── cache/                       # Search cache
+    ├── logs/                        # System logs
+    ├── [search-results].md          # Saved searches
+    └── README.md                    # System description
 ```
 
 ---
 
-## 🔍 **Arama Örnekleri**
+## 🔍 **Search Examples**
 
-### **Temel Arama**
+### **Basic Search**
 ```bash
 python src/main.py --search "React component" --data-path "C:\MyProject"
 ```
 
-### **Arama + Dosyaya Kaydet** ⭐ **YENİ**
+### **Search + Save to File** ⭐ **NEW**
 ```bash
 python src/main.py --search "authentication system" --save-to "auth-docs.md" --data-path "C:\MyProject"
-# ✅ Sonuç: C:\MyProject\.collective-memory\auth-docs.md
+# ✅ Result: C:\MyProject\.collective-memory\auth-docs.md
 ```
 
-### **İstatistik Görüntüleme**
+### **View Statistics**
 ```bash
 python src/main.py --stats --data-path "C:\MyProject"
-# ✅ Çıktı: Dosya sayısı, boyut, son değişiklikler
+# ✅ Output: File count, size, last changes
 ```
 
-### **İnteraktif Mod Kullanımı**
+### **Interactive Mode Usage**
 ```bash
 python src/main.py --interactive --data-path "C:\MyProject"
 
-# İnteraktif komutlar:
+# Interactive commands:
 > search Django settings
 > search error handling  
 > stats
@@ -149,100 +149,100 @@ python src/main.py --interactive --data-path "C:\MyProject"
 
 ---
 
-## 💻 **İlk Kullanım Komutları**
+## 💻 **First Use Commands**
 
-Sistem açıldıktan sonra terminal'de:
+After the system opens, in the terminal:
 
 ```bash
-help                    # Tüm komutları göster
-search "dokumentasyon"  # Dokümantasyon ara
-search "API"           # API bilgileri ara
-search "error"         # Hata raporları ara
-files                  # Tüm dosyaları listele
-stats                  # Sistem durumu
-exit                   # Çıkış
+help                    # Show all commands
+search "documentation"  # Search documentation
+search "API"           # Search API information
+search "error"         # Search error reports
+files                  # List all files
+stats                  # System status
+exit                   # Exit
 ```
 
 ---
 
-## 🐛 **Hızlı Troubleshooting**
+## 🐛 **Quick Troubleshooting**
 
-### **Problem: Modül bulunamadı**
+### **Problem: Module not found**
 ```bash
 pip install watchdog colorama pathlib
 ```
 
-### **Problem: İzin hatası**
+### **Problem: Permission error**
 ```bash
 # Linux/Mac:
 chmod +x src/main.py
 
-# Windows: PowerShell'i yönetici olarak çalıştır
+# Windows: Run PowerShell as administrator
 ```
 
-### **Problem: Python versiyonu**
+### **Problem: Python version**
 ```bash
-python --version  # 3.9+ olmalı
-```
-
----
-
-## 🎯 **En Kullanışlı Özellikler**
-
-### **1. Cursor Chat Geçmişi**
-```bash
-cursor_history          # Son chatler
-cursor_history --limit=20  # Son 20 chat
-```
-
-### **2. Gelişmiş Arama**
-```bash
-search "react component" --limit=10    # Sınırlı sonuç
-search "API" --type=markdown          # Sadece .md dosyalarda
-```
-
-### **3. Dosya İzleme**
-```bash
-files --recent          # Son değişen dosyalar
-files --count          # Toplam dosya sayısı
+python --version  # Should be 3.9+
 ```
 
 ---
 
-## 🔧 **Sistem Kontrolü**
+## 🎯 **Most Useful Features**
 
-Herhangi bir sorun yaşıyorsanız:
+### **1. Cursor Chat History**
+```bash
+cursor_history          # Recent chats
+cursor_history --limit=20  # Last 20 chats
+```
+
+### **2. Advanced Search**
+```bash
+search "react component" --limit=10    # Limited results
+search "API" --type=markdown          # Only .md files
+```
+
+### **3. File Monitoring**
+```bash
+files --recent          # Recently changed files
+files --count          # Total file count
+```
+
+---
+
+## 🔧 **System Control**
+
+If you encounter any issues:
 
 ```bash
-# Sistem durumu
+# System status
 python src/main.py --stats --data-path ../data
 
-# Yardım menüsü
+# Help menu
 python src/main.py --help
 
-# Versiyon kontrolü
+# Version check
 python src/main.py --version
 ```
 
 ---
 
-## 📚 **Daha Fazla Bilgi**
+## 📚 **More Information**
 
-- **Detaylı Rehber:** [`USAGE_GUIDE.md`](USAGE_GUIDE.md)
-- **Ana Dokümantasyon:** [`../README.md`](../README.md)
-- **Sistem Rehberi:** [`../collective-memory.md`](../collective-memory.md)
+- **Detailed Guide:** [`USAGE_GUIDE.md`](USAGE_GUIDE.md)
+- **Main Documentation:** [`../README.md`](../README.md)
+- **System Guide:** [`../collective-memory.md`](../collective-memory.md)
 
 ---
 
-## 🎉 **Başarılı Kurulum Testi**
+## 🎉 **Successful Installation Test**
 
-Sistem doğru çalışıyorsa şu çıktıyı görmelisiniz:
+If the system is working correctly, you should see this output:
 
 ```
 ╔═══════════════════════════════════════════════════╗
 ║          Collective Memory v1.0                  ║
-║        Cursor AI Akıllı Bağlam Orkestratörü      ║
-║      + Dosya İzleme + Arama + İndeksleme        ║
+║        AI Agent Smart Context Orchestrator      ║
+║      + File Monitoring + Search + Indexing      ║
 ╚═══════════════════════════════════════════════════╝
 
 🔍 Query System Mode - Enhanced Features Active
@@ -255,8 +255,8 @@ Collective Memory Terminal (type 'help' for commands)
 > 
 ```
 
-**Tebrikler! Sistem hazır! 🎉**
+**Congratulations! System ready! 🎉**
 
 ---
 
-**⚡ Bu rehber 5 dakikada sistemi çalıştırmanız için tasarlandı. Detaylı bilgi için diğer dokümanlara bakın.** 
+**⚡ This guide is designed to run the system in 5 minutes. For more details, refer to other documents.** 
