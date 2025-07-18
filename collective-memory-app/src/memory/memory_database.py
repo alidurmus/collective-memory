@@ -3,14 +3,13 @@ Memory Database Manager for Collective Memory v3.0
 A-Mem + Mem0 Hybrid Memory System
 """
 
-import sqlite3
-import json
-import os
-from datetime import datetime, timedelta
-from typing import List, Dict, Optional, Tuple, Any
-import numpy as np
-from pathlib import Path
+# Standard library imports
 import logging
+import os
+import json
+from typing import Optional, Dict, List, Any
+import sqlite3
+from datetime import datetime, timedelta
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -81,13 +80,13 @@ class MemoryDatabase:
     def store_memory(
         self,
         content: str,
-        context: str = None,
+        context: Optional[str] = None,
         memory_type: str = "fact",
         importance_score: float = 0.5,
-        project_path: str = None,
-        cursor_session_id: str = None,
-        metadata: Dict = None,
-    ) -> int:
+        project_path: Optional[str] = None,
+        cursor_session_id: Optional[str] = None,
+        metadata: Optional[Dict] = None,
+    ) -> Optional[int]:
         """Store a new memory in the database."""
 
         with self.get_connection() as conn:
@@ -129,9 +128,9 @@ class MemoryDatabase:
 
     def retrieve_memories(
         self,
-        query: str = None,
-        memory_type: str = None,
-        project_path: str = None,
+        query: Optional[str] = None,
+        memory_type: Optional[str] = None,
+        project_path: Optional[str] = None,
         limit: int = 10,
         min_importance: float = 0.0,
     ) -> List[Dict]:
@@ -142,14 +141,14 @@ class MemoryDatabase:
 
             # Build query
             sql = """
-                SELECT m.*, 
+                SELECT m.*,
                        COUNT(ml.id) as link_count,
                        AVG(ml.strength) as avg_link_strength
                 FROM memories m
                 LEFT JOIN memory_links ml ON (m.id = ml.memory_id_1 OR m.id = ml.memory_id_2)
                 WHERE m.status = 'active' AND m.importance_score >= ?
             """
-            params = [min_importance]
+            params: List[Any] = [min_importance]
 
             if query:
                 sql += " AND (m.content LIKE ? OR m.summary LIKE ?)"
@@ -182,16 +181,16 @@ class MemoryDatabase:
                     memory["metadata"] = json.loads(memory["metadata"])
                 memories.append(memory)
 
-            logger.info(f"Retrieved {len(memories)} memories")
+            logger.info("Retrieved %d memories", len(memories))
             return memories
 
     def update_memory(
         self,
         memory_id: int,
-        content: str = None,
-        importance_score: float = None,
-        status: str = None,
-        evolution_reason: str = None,
+        content: Optional[str] = None,
+        importance_score: Optional[float] = None,
+        status: Optional[str] = None,
+        evolution_reason: Optional[str] = None,
     ) -> bool:
         """Update an existing memory (Mem0 inspired)."""
 
@@ -199,8 +198,8 @@ class MemoryDatabase:
             cursor = conn.cursor()
 
             # Build update query
-            updates = []
-            params = []
+            updates: List[str] = []
+            params: List[Any] = []
 
             if content is not None:
                 updates.append("content = ?")
@@ -237,7 +236,7 @@ class MemoryDatabase:
 
             if success:
                 self._log_event("memory_updated", {"memory_id": memory_id})
-                logger.info(f"Memory {memory_id} updated successfully")
+                logger.info("Memory %d updated successfully", memory_id)
 
             return success
 
@@ -278,7 +277,7 @@ class MemoryDatabase:
         relationship_type: str = "related_to",
         strength: float = 0.5,
         is_auto_generated: bool = True,
-    ) -> int:
+    ) -> Optional[int]:
         """Create a link between two memories."""
 
         with self.get_connection() as conn:
@@ -288,7 +287,7 @@ class MemoryDatabase:
                 cursor.execute(
                     """
                     INSERT INTO memory_links (
-                        memory_id_1, memory_id_2, relationship_type, 
+                        memory_id_1, memory_id_2, relationship_type,
                         strength, is_auto_generated
                     ) VALUES (?, ?, ?, ?, ?)
                 """,
@@ -331,7 +330,7 @@ class MemoryDatabase:
 
             cursor.execute(
                 """
-                SELECT ml.*, 
+                SELECT ml.*,
                        m1.content as memory_1_content,
                        m2.content as memory_2_content
                 FROM memory_links ml
@@ -350,8 +349,8 @@ class MemoryDatabase:
     # ================================
 
     def create_conversation_context(
-        self, cursor_session_id: str, project_path: str, project_name: str = None
-    ) -> int:
+        self, cursor_session_id: str, project_path: str, project_name: Optional[str] = None
+    ) -> Optional[int]:
         """Create a new conversation context."""
 
         with self.get_connection() as conn:
@@ -382,9 +381,9 @@ class MemoryDatabase:
         context_id: int,
         message_type: str,
         content: str,
-        code_snippet: str = None,
-        file_path: str = None,
-    ) -> int:
+        code_snippet: Optional[str] = None,
+        file_path: Optional[str] = None,
+    ) -> Optional[int]:
         """Add a message to conversation context."""
 
         with self.get_connection() as conn:
@@ -393,8 +392,8 @@ class MemoryDatabase:
             # Get next sequence number
             cursor.execute(
                 """
-                SELECT COALESCE(MAX(sequence_number), 0) + 1 
-                FROM conversation_messages 
+                SELECT COALESCE(MAX(sequence_number), 0) + 1
+                FROM conversation_messages
                 WHERE context_id = ?
             """,
                 (context_id,),
@@ -425,7 +424,7 @@ class MemoryDatabase:
             # Update context message count
             cursor.execute(
                 """
-                UPDATE conversation_context 
+                UPDATE conversation_context
                 SET total_messages = total_messages + 1,
                     last_activity = CURRENT_TIMESTAMP
                 WHERE id = ?
@@ -439,7 +438,7 @@ class MemoryDatabase:
     # UTILITY METHODS
     # ================================
 
-    def _log_event(self, event_type: str, event_data: Dict = None):
+    def _log_event(self, event_type: str, event_data: Optional[Dict] = None):
         """Log system events."""
 
         try:
@@ -468,7 +467,7 @@ class MemoryDatabase:
             # Memory statistics
             cursor.execute(
                 """
-                SELECT 
+                SELECT
                     COUNT(*) as total_memories,
                     COUNT(CASE WHEN status = 'active' THEN 1 END) as active_memories,
                     AVG(importance_score) as avg_importance,
@@ -483,7 +482,7 @@ class MemoryDatabase:
             # Link statistics
             cursor.execute(
                 """
-                SELECT 
+                SELECT
                     COUNT(*) as total_links,
                     AVG(strength) as avg_strength,
                     COUNT(DISTINCT relationship_type) as unique_relationships
@@ -497,7 +496,7 @@ class MemoryDatabase:
             # Conversation statistics
             cursor.execute(
                 """
-                SELECT 
+                SELECT
                     COUNT(*) as total_contexts,
                     COUNT(CASE WHEN status = 'active' THEN 1 END) as active_contexts,
                     SUM(total_messages) as total_messages
@@ -521,9 +520,9 @@ class MemoryDatabase:
             # Archive old memories with low importance
             cursor.execute(
                 """
-                UPDATE memories 
+                UPDATE memories
                 SET status = 'archived'
-                WHERE status = 'active' 
+                WHERE status = 'active'
                 AND importance_score < 0.3
                 AND accessed_at < ?
             """,
@@ -540,7 +539,7 @@ class MemoryDatabase:
                 },
             )
 
-            logger.info(f"Archived {archived_count} old memories")
+            logger.info("Archived %d old memories", archived_count)
             return archived_count
 
     def close(self):
@@ -566,7 +565,7 @@ class MemoryEvolutionEngine:
         user_input: str,
         ai_response: str,
         context: str,
-        cursor_session_id: str = None,
+        cursor_session_id: Optional[str] = None,
     ) -> Dict:
         """Process a user-AI interaction and evolve memory."""
 
@@ -608,7 +607,7 @@ class MemoryEvolutionEngine:
             elif action == "DELETE":
                 # Find and delete contradicted memory
                 contradicted_memory = self._find_contradicted_memory(fact["content"])
-                if contradicted_memory:
+                if contradicted_memory is not None:
                     self.db.delete_memory(contradicted_memory["id"])
                     actions_taken.append(
                         {"action": "DELETE", "memory_id": contradicted_memory["id"]}
@@ -651,29 +650,20 @@ class MemoryEvolutionEngine:
 
         return facts
 
-    def _determine_action(self, fact: Dict, context: str) -> str:
-        """Determine what action to take for a fact."""
-        # Simplified logic - in practice, this would be more sophisticated
+    def _determine_action(self, fact: Dict, _context: str) -> str:
+        """Determine what action to take for a fact (ADD/UPDATE/DELETE/NOOP)."""
+        # Simple logic - can be enhanced with LLM
+        content = fact.get("content", "")
+        if len(content) < 10:
+            return "NOOP"
+        return "ADD"
 
-        # Check if similar memory exists
-        similar_memory = self._find_similar_memory(fact["content"])
+    def _find_similar_memory(self, _content: str) -> Optional[Dict]:
+        """Find a similar memory in the database."""
+        # Placeholder - implement similarity search
+        return None
 
-        if similar_memory:
-            # If importance increased, update
-            if fact.get("importance", 0.5) > similar_memory["importance_score"]:
-                return "UPDATE"
-            else:
-                return "NOOP"
-        else:
-            # New fact, add it
-            return "ADD"
-
-    def _find_similar_memory(self, content: str) -> Optional[Dict]:
-        """Find similar memory in database."""
-        memories = self.db.retrieve_memories(query=content[:50], limit=1)
-        return memories[0] if memories else None
-
-    def _find_contradicted_memory(self, content: str) -> Optional[Dict]:
-        """Find memory that contradicts the given content."""
-        # This would need more sophisticated logic
+    def _find_contradicted_memory(self, _content: str) -> Optional[Dict]:
+        """Find a memory that contradicts the given content."""
+        # Placeholder - implement contradiction detection
         return None

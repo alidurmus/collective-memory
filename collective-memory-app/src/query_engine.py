@@ -425,7 +425,7 @@ class QueryEngine:
                 modified_date = datetime.fromisoformat(
                     result.modified_at.replace("Z", "+00:00")
                 )
-                days_ago = (datetime.now() - modified_date).days
+                days_ago = (datetime.now(timezone.utc) - modified_date).days
                 if days_ago <= 7:
                     score *= 1.1
             except:

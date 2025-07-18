@@ -45,6 +45,35 @@ When the system is first run, it creates this structure in your project:
 
 ---
 
+## 🚀 Smart Context Bridge Kullanımı
+
+```bash
+cd collective-memory-app
+python src/context_bridge_cli.py start
+# veya Python API ile:
+# bridge = ContextBridgeCLI(); bridge.cmd_start(args)
+```
+
+Yeni bir sohbette sadece şunu yazın:
+```
+@Rules
+```
+Tüm context otomatik olarak sağlanır!
+
+---
+
+## ⚠️ Sık Karşılaşılan Hatalar
+
+### AttributeError: 'ContextBridgeCLI' object has no attribute 'start'
+**Neden:** Kodda `start()` metodu yok, doğru metod `cmd_start()` veya terminalde `python src/context_bridge_cli.py start` komutunu kullanmalısınız.
+
+**Çözüm:**
+- Doğru kullanım: `bridge.cmd_start(args)` veya terminalde `python src/context_bridge_cli.py start`
+- Yanlış kullanım: `bridge.start()` → AttributeError verir.
+- Tüm mevcut CLI komutlarını görmek için: `python src/context_bridge_cli.py --help`
+
+---
+
 ## 🚨 **Quick Troubleshooting**
 
 ### **Common Error: "can't open file"**

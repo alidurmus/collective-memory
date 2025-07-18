@@ -10,6 +10,8 @@
 5. **Progress Reporting**: Her adım için detaylı rapor verilir
 6. **Validation**: Sonuçlar doğrulanır ve kalite kontrol yapılır
 
+** kolaya kaçma, test atlama, hataları göz ardı etme
+
 ### Workflow Adımları
 ```
 1. ANALIZ AŞAMASI

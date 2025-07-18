@@ -7,6 +7,7 @@ Smart Context Bridge sistemini yönetmek için terminal arayüzü
 import sys
 import argparse
 import json
+import logging
 from pathlib import Path
 from datetime import datetime
 from colorama import init, Fore, Style
@@ -22,8 +23,73 @@ try:
         ChatContext,
     )
 except ImportError:
-    print(f"{Fore.RED}❌ Smart Context Bridge modülü bulunamadı!{Style.RESET_ALL}")
-    sys.exit(1)
+    try:
+        from src.smart_context_bridge import (
+            SmartContextBridge,
+            ContextBridgeConfig,
+            ChatContext,
+        )
+    except ImportError:
+        print(f"{Fore.RED}❌ Smart Context Bridge modülü bulunamadı!{Style.RESET_ALL}")
+        print(f"{Fore.YELLOW}💡 Çözüm: collective-memory-app klasöründe olduğunuzdan emin olun{Style.RESET_ALL}")
+        sys.exit(1)
+
+
+class CLIErrorHandler:
+    """CLI hata yönetimi sınıfı"""
+    
+    def __init__(self):
+        self.logger = logging.getLogger(__name__)
+        
+    def handle_method_not_found(self, method_name: str, 
+                               available_methods: list):
+        """Metod bulunamadı hatası yönetimi"""
+        error_msg = (f"Method '{method_name}' not found. "
+                    f"Available methods: {available_methods}")
+        self.logger.error(error_msg)
+        return {
+            'error': 'method_not_found',
+            'message': error_msg,
+            'available_methods': available_methods,
+            'suggestion': f"Use 'cmd_{method_name}' instead of '{method_name}'"
+        }
+        
+    def handle_import_error(self, module_name: str, error: Exception):
+        """Import hatası yönetimi"""
+        error_msg = f"Failed to import {module_name}: {error}"
+        self.logger.error(error_msg)
+        return {
+            'error': 'import_error',
+            'message': error_msg,
+            'suggestion': f"Check if {module_name} is properly installed"
+        }
+
+
+class MethodNameMapper:
+    """Metod isim eşleştirme sınıfı"""
+    
+    def __init__(self):
+        self.method_mappings = {
+            'start': 'cmd_start',
+            'stop': 'cmd_stop',
+            'status': 'cmd_status',
+            'config': 'cmd_config',
+            'analyze': 'cmd_analyze',
+            'test': 'cmd_test'
+        }
+        
+    def get_correct_method_name(self, method_name: str) -> str:
+        """Doğru metod ismini döndür"""
+        return self.method_mappings.get(method_name, method_name)
+        
+    def validate_method_exists(self, obj, method_name: str) -> bool:
+        """Metodun objede var olup olmadığını kontrol et"""
+        return hasattr(obj, method_name) and callable(getattr(obj, method_name))
+        
+    def get_available_methods(self, obj) -> list:
+        """Objedeki mevcut metodları döndür"""
+        return [attr for attr in dir(obj) 
+                if callable(getattr(obj, attr)) and attr.startswith('cmd_')]
 
 
 class ContextBridgeCLI:
@@ -32,6 +98,30 @@ class ContextBridgeCLI:
     def __init__(self):
         self.bridge = None
         self.config_file = ".collective-memory/config/context_bridge.json"
+        self.error_handler = CLIErrorHandler()
+        self.method_mapper = MethodNameMapper()
+        self.logger = logging.getLogger(__name__)
+
+    def __getattr__(self, name):
+        """Bilinmeyen metod çağrıları için hata yönetimi"""
+        if name in ['start', 'stop', 'status', 'config', 'analyze', 'test']:
+            # Kullanıcı yanlış metod ismi kullanmış
+            available_methods = self.method_mapper.get_available_methods(self)
+            error_info = self.error_handler.handle_method_not_found(
+                name, available_methods)
+            
+            print(f"{Fore.RED}❌ {error_info['message']}{Style.RESET_ALL}")
+            print(f"{Fore.YELLOW}💡 Suggestion: {error_info['suggestion']}"
+                  f"{Style.RESET_ALL}")
+            print(f"{Fore.BLUE}📋 Available methods: "
+                  f"{', '.join(available_methods)}{Style.RESET_ALL}")
+            
+            raise AttributeError(
+                f"'{self.__class__.__name__}' object has no attribute '{name}'. "
+                f"Use 'cmd_{name}' instead.")
+        
+        raise AttributeError(
+            f"'{self.__class__.__name__}' object has no attribute '{name}'")
 
     def load_config(self) -> ContextBridgeConfig:
         """Konfigürasyon dosyasını yükler"""
@@ -44,6 +134,7 @@ class ContextBridgeCLI:
                 return ContextBridgeConfig(**config_data)
             except Exception as e:
                 print(f"{Fore.YELLOW}⚠️ Config yükleme hatası: {e}{Style.RESET_ALL}")
+                self.logger.error(f"Configuration loading error: {e}")
 
         # Default config
         return ContextBridgeConfig()
@@ -64,103 +155,121 @@ class ContextBridgeCLI:
             "max_conversations_to_analyze": config.max_conversations_to_analyze,
         }
 
-        with open(config_path, "w", encoding="utf-8") as f:
-            json.dump(config_dict, f, indent=2)
+        try:
+            with open(config_path, "w", encoding="utf-8") as f:
+                json.dump(config_dict, f, indent=2)
+        except Exception as e:
+            print(f"{Fore.RED}❌ Config kaydetme hatası: {e}{Style.RESET_ALL}")
+            self.logger.error(f"Configuration saving error: {e}")
 
     def cmd_start(self, args):
-        """Smart Context Bridge'i başlatır"""
+        """Smart Context Bridge'i başlatır - CORRECT METHOD NAME"""
         print(f"{Fore.CYAN}🚀 Smart Context Bridge başlatılıyor...{Style.RESET_ALL}")
 
-        config = self.load_config()
+        try:
+            config = self.load_config()
 
-        # CLI args ile config'i override et
-        if args.json_path:
-            config.json_chat_path = args.json_path
-        if args.rules_path:
-            config.cursor_rules_path = args.rules_path
-        if args.min_score:
-            config.min_relevance_score = args.min_score
-        if args.max_conversations:
-            config.max_conversations_to_analyze = args.max_conversations
+            # CLI args ile config'i override et
+            if args.json_path:
+                config.json_chat_path = args.json_path
+            if args.rules_path:
+                config.cursor_rules_path = args.rules_path
+            if args.min_score:
+                config.min_relevance_score = args.min_score
+            if args.max_conversations:
+                config.max_conversations_to_analyze = args.max_conversations
 
-        # Config'i kaydet
-        self.save_config(config)
+            # Config'i kaydet
+            self.save_config(config)
 
-        # Bridge oluştur ve başlat
-        self.bridge = SmartContextBridge(config)
+            # Bridge oluştur ve başlat
+            self.bridge = SmartContextBridge(config)
 
-        if args.daemon:
-            # Background mode (gelecekte implement edilecek)
-            print(f"{Fore.YELLOW}⚠️ Daemon mode henüz desteklenmemiyor{Style.RESET_ALL}")
+            if args.daemon:
+                # Background mode (gelecekte implement edilecek)
+                print(f"{Fore.YELLOW}⚠️ Daemon mode henüz desteklenmemiyor{Style.RESET_ALL}")
+                return False
+            else:
+                # Foreground mode
+                return self.bridge.run_forever()
+                
+        except Exception as e:
+            print(f"{Fore.RED}❌ Smart Context Bridge başlatma hatası: "
+                  f"{e}{Style.RESET_ALL}")
+            self.logger.error(f"Failed to start Smart Context Bridge: {e}")
             return False
-        else:
-            # Foreground mode
-            return self.bridge.run_forever()
 
     def cmd_stop(self, args):
-        """Smart Context Bridge'i durdurur"""
+        """Smart Context Bridge'i durdurur - CORRECT METHOD NAME"""
         print(f"{Fore.YELLOW}⏹️ Smart Context Bridge durduruluyor...{Style.RESET_ALL}")
 
-        if self.bridge and self.bridge.is_running:
-            self.bridge.stop_monitoring()
-            print(f"{Fore.GREEN}✅ Smart Context Bridge durduruldu{Style.RESET_ALL}")
-        else:
-            print(
-                f"{Fore.YELLOW}⚠️ Smart Context Bridge zaten çalışmıyor{Style.RESET_ALL}"
-            )
+        try:
+            if self.bridge and self.bridge.is_running:
+                self.bridge.stop_monitoring()
+                print(f"{Fore.GREEN}✅ Smart Context Bridge durduruldu{Style.RESET_ALL}")
+                return True
+            else:
+                print(f"{Fore.YELLOW}⚠️ Smart Context Bridge zaten çalışmıyor{Style.RESET_ALL}")
+                return False
+        except Exception as e:
+            print(f"{Fore.RED}❌ Smart Context Bridge durdurma hatası: {e}{Style.RESET_ALL}")
+            self.logger.error(f"Failed to stop Smart Context Bridge: {e}")
+            return False
 
     def cmd_status(self, args):
-        """Smart Context Bridge durumunu gösterir"""
+        """Smart Context Bridge durumunu gösterir - CORRECT METHOD NAME"""
         print(f"{Fore.CYAN}📊 Smart Context Bridge Durumu{Style.RESET_ALL}")
         print("=" * 50)
 
-        config = self.load_config()
+        try:
+            config = self.load_config()
 
-        # Dizin durumları
-        json_path = Path(config.json_chat_path)
-        rules_path = Path(config.cursor_rules_path)
-        auto_context_path = rules_path / config.auto_context_file
+            # Dizin durumları
+            json_path = Path(config.json_chat_path)
+            rules_path = Path(config.cursor_rules_path)
+            auto_context_path = rules_path / config.auto_context_file
 
-        print(f"{Fore.BLUE}📁 Paths:{Style.RESET_ALL}")
-        print(f"  JSON Chat: {json_path.absolute()}")
-        print(f"  Cursor Rules: {rules_path.absolute()}")
-        print(f"  Auto Context: {auto_context_path.absolute()}")
-        print()
+            print(f"{Fore.BLUE}📁 Paths:{Style.RESET_ALL}")
+            print(f"  JSON Chat: {json_path.absolute()}")
+            print(f"  Cursor Rules: {rules_path.absolute()}")
+            print(f"  Auto Context: {auto_context_path.absolute()}")
+            print()
 
-        print(f"{Fore.BLUE}📊 Status:{Style.RESET_ALL}")
-        print(f"  JSON Chat Directory: {'✅ Var' if json_path.exists() else '❌ Yok'}")
-        print(
-            f"  Cursor Rules Directory: {'✅ Var' if rules_path.exists() else '❌ Yok'}"
-        )
-        print(
-            f"  Auto Context File: {'✅ Var' if auto_context_path.exists() else '❌ Yok'}"
-        )
-        print()
+            print(f"{Fore.BLUE}📊 Status:{Style.RESET_ALL}")
+            print(f"  JSON Chat Directory: {'✅ Var' if json_path.exists() else '❌ Yok'}")
+            print(f"  Cursor Rules Directory: {'✅ Var' if rules_path.exists() else '❌ Yok'}")
+            print(f"  Auto Context File: {'✅ Var' if auto_context_path.exists() else '❌ Yok'}")
+            print()
 
-        # JSON dosyaları
-        if json_path.exists():
-            json_files = list(json_path.glob("**/*.json"))
-            print(f"{Fore.BLUE}💬 JSON Chat Files:{Style.RESET_ALL}")
-            print(f"  Toplam Dosya: {len(json_files)}")
+            # JSON dosyaları
+            if json_path.exists():
+                json_files = list(json_path.glob("**/*.json"))
+                print(f"{Fore.BLUE}💬 JSON Chat Files:{Style.RESET_ALL}")
+                print(f"  Toplam Dosya: {len(json_files)}")
 
-            if json_files:
-                latest_file = max(json_files, key=lambda f: f.stat().st_mtime)
-                latest_time = datetime.fromtimestamp(latest_file.stat().st_mtime)
-                print(f"  Son Güncelleme: {latest_time.strftime('%Y-%m-%d %H:%M:%S')}")
-                print(f"  Son Dosya: {latest_file.name}")
-        else:
-            print(f"{Fore.YELLOW}⚠️ JSON Chat dizini bulunamadı{Style.RESET_ALL}")
+                if json_files:
+                    latest_file = max(json_files, key=lambda f: f.stat().st_mtime)
+                    latest_time = datetime.fromtimestamp(latest_file.stat().st_mtime)
+                    print(f"  Son Güncelleme: {latest_time.strftime('%Y-%m-%d %H:%M:%S')}")
+                    print(f"  Son Dosya: {latest_file.name}")
+            else:
+                print(f"{Fore.YELLOW}⚠️ JSON Chat dizini bulunamadı{Style.RESET_ALL}")
 
-        print()
+            print()
 
-        # Config bilgileri
-        print(f"{Fore.BLUE}⚙️ Configuration:{Style.RESET_ALL}")
-        print(
-            f"  Context Generation: {'✅ Aktif' if config.context_generation_enabled else '❌ Pasif'}"
-        )
-        print(f"  Min Relevance Score: {config.min_relevance_score}")
-        print(f"  Max Conversations: {config.max_conversations_to_analyze}")
-        print(f"  Update Interval: {config.update_interval_seconds}s")
+            # Config bilgileri
+            print(f"{Fore.BLUE}⚙️ Configuration:{Style.RESET_ALL}")
+            print(f"  Context Generation: {'✅ Aktif' if config.context_generation_enabled else '❌ Pasif'}")
+            print(f"  Min Relevance Score: {config.min_relevance_score}")
+            print(f"  Max Conversations: {config.max_conversations_to_analyze}")
+            print(f"  Update Interval: {config.update_interval_seconds}s")
+            
+            return True
+            
+        except Exception as e:
+            print(f"{Fore.RED}❌ Status kontrol hatası: {e}{Style.RESET_ALL}")
+            self.logger.error(f"Failed to get status: {e}")
+            return False
 
     def cmd_analyze(self, args):
         """Mevcut JSON chat dosyalarını analiz eder"""

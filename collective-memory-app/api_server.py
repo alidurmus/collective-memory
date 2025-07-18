@@ -8,6 +8,7 @@ import os
 import sys
 import json
 import logging
+import platform
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, Any
 
@@ -18,7 +19,7 @@ from werkzeug.exceptions import BadRequest, NotFound, InternalServerError
 import psutil
 
 # Import our existing modules
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 from src.database_manager import DatabaseManager
 from src.enhanced_query_engine import EnhancedQueryEngine, EnhancedSearchQuery
 from src.query_engine import SearchQuery
@@ -63,11 +64,36 @@ class CollectiveMemoryAPI:
         # Enable CORS
         CORS(self.app, origins=["http://localhost:3000", "http://127.0.0.1:3000"])
 
-        # Initialize SocketIO with Windows compatibility
-        # Temporarily disabled due to Windows socket issues
-        self.socketio = None
-        self.websocket_enabled = False
-        logger.info("WebSocket support disabled for Windows compatibility")
+        # Initialize Windows-compatible WebSocket system
+        try:
+            from src.websocket_manager import WindowsCompatibleSocketIO, WebSocketConfig
+            from src.windows_websocket_errors import WindowsWebSocketErrorHandler
+            
+            # Configure WebSocket for Windows compatibility
+            websocket_config = WebSocketConfig(
+                async_mode="threading",  # Windows-compatible async mode
+                cors_allowed_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+                ping_timeout=120,  # Increased for Windows stability
+                ping_interval=30,
+                logger=True,
+                engineio_logger=False
+            )
+            
+            self.websocket_manager = WindowsCompatibleSocketIO(self.app, websocket_config)
+            self.socketio = self.websocket_manager.socketio
+            self.websocket_enabled = True
+            
+            # Initialize error handler
+            self.websocket_error_handler = WindowsWebSocketErrorHandler()
+            
+            logger.info("Windows-compatible WebSocket system initialized successfully")
+            
+        except Exception as e:
+            logger.error(f"Failed to initialize WebSocket system: {e}")
+            self.socketio = None
+            self.websocket_enabled = False
+            self.websocket_manager = None
+            self.websocket_error_handler = None
 
         # Initialize components
         self.data_folder = data_folder or os.getcwd()
@@ -146,6 +172,87 @@ class CollectiveMemoryAPI:
                 return jsonify(summary)
             except Exception as e:
                 return jsonify({"error": str(e)}), 500
+
+        # WebSocket diagnostic endpoints
+        @self.app.route("/api/websocket/status", methods=["GET"])
+        def get_websocket_status():
+            """Get WebSocket status and diagnostic information"""
+            try:
+                status = {
+                    "enabled": self.websocket_enabled,
+                    "timestamp": datetime.now(timezone.utc).isoformat()
+                }
+                
+                if self.websocket_enabled and hasattr(self, 'websocket_manager'):
+                    status.update(self.websocket_manager.get_status())
+                    
+                    # Add connection information
+                    status["connections"] = {
+                        "total": self.websocket_manager.get_connection_count(),
+                        "details": [
+                            {
+                                "sid": conn.sid,
+                                "connected_at": conn.connected_at.isoformat(),
+                                "last_activity": conn.last_activity.isoformat(),
+                                "room": conn.room,
+                                "ip_address": conn.ip_address
+                            }
+                            for conn in self.websocket_manager.get_all_connections().values()
+                        ]
+                    }
+                
+                # Add error information if available
+                if hasattr(self, 'websocket_error_handler'):
+                    status["errors"] = self.websocket_error_handler.get_error_summary()
+                    status["diagnostics"] = self.websocket_error_handler.get_diagnostic_info()
+                
+                return jsonify(APIResponse(success=True, data=status).__dict__)
+                
+            except Exception as e:
+                logger.error(f"Error getting WebSocket status: {e}")
+                return jsonify(APIResponse(success=False, error=str(e)).__dict__), 500
+
+        @self.app.route("/api/websocket/errors", methods=["GET"])
+        def get_websocket_errors():
+            """Get WebSocket error history"""
+            try:
+                if not hasattr(self, 'websocket_error_handler'):
+                    return jsonify(APIResponse(success=False, error="WebSocket error handler not available").__dict__), 404
+                
+                hours = request.args.get("hours", 24, type=int)
+                errors = self.websocket_error_handler.get_error_history(hours)
+                
+                error_data = [
+                    {
+                        "error_code": error.error_code,
+                        "error_message": error.error_message,
+                        "error_type": error.error_type,
+                        "timestamp": error.timestamp.isoformat(),
+                        "severity": error.severity,
+                        "suggested_solutions": error.suggested_solutions
+                    }
+                    for error in errors
+                ]
+                
+                return jsonify(APIResponse(success=True, data=error_data).__dict__)
+                
+            except Exception as e:
+                logger.error(f"Error getting WebSocket errors: {e}")
+                return jsonify(APIResponse(success=False, error=str(e)).__dict__), 500
+
+        @self.app.route("/api/websocket/clear-errors", methods=["POST"])
+        def clear_websocket_errors():
+            """Clear WebSocket error history"""
+            try:
+                if not hasattr(self, 'websocket_error_handler'):
+                    return jsonify(APIResponse(success=False, error="WebSocket error handler not available").__dict__), 404
+                
+                self.websocket_error_handler.clear_error_history()
+                return jsonify(APIResponse(success=True, data="Error history cleared").__dict__)
+                
+            except Exception as e:
+                logger.error(f"Error clearing WebSocket errors: {e}")
+                return jsonify(APIResponse(success=False, error=str(e)).__dict__), 500
 
         # Stub endpoint removed - real implementation is later in the file
 
@@ -771,30 +878,76 @@ class CollectiveMemoryAPI:
             logger.info("Skipping WebSocket event setup - WebSocket disabled")
             return
 
-        @self.socketio.on("connect")
-        def handle_connect():
-            logger.info(f"Client connected: {request.sid}")
-            emit("connected", {"message": "Connected to Collective Memory API"})
-
-        @self.socketio.on("disconnect")
-        def handle_disconnect():
-            logger.info(f"Client disconnected: {request.sid}")
-
-        @self.socketio.on("join_room")
-        def handle_join_room(data):
-            room = data.get("room", "general")
-            join_room(room)
-            emit("joined_room", {"room": room})
-
-        @self.socketio.on("leave_room")
-        def handle_leave_room(data):
-            room = data.get("room", "general")
-            leave_room(room)
-            emit("left_room", {"room": room})
+        # Register custom event handlers with the WebSocket manager
+        if hasattr(self, 'websocket_manager'):
+            self.websocket_manager.register_event_handler("search_started", self._handle_search_started)
+            self.websocket_manager.register_event_handler("search_completed", self._handle_search_completed)
+            self.websocket_manager.register_event_handler("system_update", self._handle_system_update)
+            self.websocket_manager.register_event_handler("team_message", self._handle_team_message)
 
         # Enterprise WebSocket handlers for Phase 3
-        for event_name, handler in websocket_handlers.items():
-            self.socketio.on(event_name)(handler)
+        if hasattr(self, 'websocket_handlers'):
+            for event_name, handler in websocket_handlers.items():
+                if self.socketio:
+                    self.socketio.on(event_name)(handler)
+    
+    def _handle_search_started(self, data):
+        """Handle search started event"""
+        try:
+            if self.websocket_manager:
+                self.websocket_manager.emit_to_all("search_started", {
+                    "query": data.get("query", ""),
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "user": data.get("user", "anonymous")
+                })
+        except Exception as e:
+            logger.error(f"Error handling search started: {e}")
+            if self.websocket_error_handler:
+                self.websocket_error_handler.analyze_error(str(e))
+    
+    def _handle_search_completed(self, data):
+        """Handle search completed event"""
+        try:
+            if self.websocket_manager:
+                self.websocket_manager.emit_to_all("search_completed", {
+                    "query": data.get("query", ""),
+                    "results_count": data.get("results_count", 0),
+                    "search_time": data.get("search_time", 0),
+                    "timestamp": datetime.now(timezone.utc).isoformat()
+                })
+        except Exception as e:
+            logger.error(f"Error handling search completed: {e}")
+            if self.websocket_error_handler:
+                self.websocket_error_handler.analyze_error(str(e))
+    
+    def _handle_system_update(self, data):
+        """Handle system update event"""
+        try:
+            if self.websocket_manager:
+                self.websocket_manager.emit_to_all("system_update", {
+                    "type": data.get("type", "general"),
+                    "message": data.get("message", ""),
+                    "timestamp": datetime.now(timezone.utc).isoformat()
+                })
+        except Exception as e:
+            logger.error(f"Error handling system update: {e}")
+            if self.websocket_error_handler:
+                self.websocket_error_handler.analyze_error(str(e))
+    
+    def _handle_team_message(self, data):
+        """Handle team message event"""
+        try:
+            room = data.get("room", "general")
+            if self.websocket_manager:
+                self.websocket_manager.emit_to_room(room, "team_message", {
+                    "user": data.get("user", "anonymous"),
+                    "message": data.get("message", ""),
+                    "timestamp": datetime.now(timezone.utc).isoformat()
+                })
+        except Exception as e:
+            logger.error(f"Error handling team message: {e}")
+            if self.websocket_error_handler:
+                self.websocket_error_handler.analyze_error(str(e))
 
     def _get_index_size(self) -> float:
         """Calculate total index size in MB"""
@@ -912,6 +1065,20 @@ Total results: {len(results)}
             self.last_search_time = datetime.now(timezone.utc)
             search_start = datetime.now(timezone.utc)
 
+            # Emit search started event via WebSocket
+            if self.websocket_enabled and hasattr(self, 'websocket_manager'):
+                try:
+                    self.websocket_manager.emit_to_all("search_started", {
+                        "query": query,
+                        "semantic": semantic,
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                        "user": request.headers.get("X-Session-ID", "anonymous")
+                    })
+                except Exception as e:
+                    logger.error(f"Error emitting search started event: {e}")
+                    if hasattr(self, 'websocket_error_handler'):
+                        self.websocket_error_handler.analyze_error(str(e))
+
             # Perform search
             from src.query_engine import SearchQuery
 
@@ -946,6 +1113,21 @@ Total results: {len(results)}
                 "searchTime": f"{search_time:.0f}ms",
                 "semantic": semantic,
             }
+
+            # Emit search completed event via WebSocket
+            if self.websocket_enabled and hasattr(self, 'websocket_manager'):
+                try:
+                    self.websocket_manager.emit_to_all("search_completed", {
+                        "query": query,
+                        "results_count": len(formatted_results),
+                        "search_time": search_time,
+                        "semantic": semantic,
+                        "timestamp": datetime.now(timezone.utc).isoformat()
+                    })
+                except Exception as e:
+                    logger.error(f"Error emitting search completed event: {e}")
+                    if hasattr(self, 'websocket_error_handler'):
+                        self.websocket_error_handler.analyze_error(str(e))
 
             # Add prompt to database and get related prompts
             try:

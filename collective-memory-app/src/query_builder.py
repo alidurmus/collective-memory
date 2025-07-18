@@ -5,7 +5,7 @@ Query Builder - Yapılandırılmış sorgu oluşturma ve panoya kopyalama modül
 
 import pyperclip
 from typing import Dict, Any, List
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 class QueryBuilder:
@@ -34,7 +34,7 @@ class QueryBuilder:
         # Başlık
         query_parts.append("# 🧠 Collective Memory - Akıllı Bağlam")
         query_parts.append(f"**Proje:** {context_data.get('project_path', 'Unknown')}")
-        query_parts.append(f"**Zaman:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        query_parts.append(f"**Zaman:** {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')}")
         query_parts.append(
             f"**İstek:** {context_data.get('user_request', 'Genel bağlam')}"
         )
@@ -183,7 +183,7 @@ class QueryBuilder:
     def save_to_file(self, query: str, filename: str = None) -> bool:
         """Sorguyu dosyaya kaydet"""
         if not filename:
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
             filename = f"collective_memory_query_{timestamp}.md"
 
         try:

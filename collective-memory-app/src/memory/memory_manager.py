@@ -3,19 +3,15 @@ Memory Manager Core for Collective Memory v3.0
 A-Mem + Mem0 Hybrid Memory System
 """
 
-import os
 import json
 import logging
 import threading
-from typing import Dict, List, Optional, Tuple, Any
-from datetime import datetime, timedelta
-from dataclasses import dataclass, asdict
-import numpy as np
-from pathlib import Path
+from typing import Dict, List, Optional, Any
+from datetime import datetime
 import hashlib
-import sqlite3
+from dataclasses import dataclass
 
-# Import our custom modules
+# Project imports (relative)
 from .memory_database import MemoryDatabase, MemoryEvolutionEngine
 from .importance_scorer import ImportanceScorer
 from ..cursor.cursor_integration import CursorIntegrationManager, CursorConversation
@@ -30,12 +26,12 @@ class MemoryCreationRequest:
     """Request for creating a new memory."""
 
     content: str
-    context: str = None
+    context: Optional[str] = None
     memory_type: str = "fact"
-    importance_score: float = None
-    project_path: str = None
-    cursor_session_id: str = None
-    metadata: Dict = None
+    importance_score: Optional[float] = None
+    project_path: Optional[str] = None
+    cursor_session_id: Optional[str] = None
+    metadata: Optional[Dict[str, Any]] = None
     auto_link: bool = True
 
 
@@ -43,9 +39,9 @@ class MemoryCreationRequest:
 class MemorySearchRequest:
     """Request for searching memories."""
 
-    query: str = None
-    memory_type: str = None
-    project_path: str = None
+    query: Optional[str] = None
+    memory_type: Optional[str] = None
+    project_path: Optional[str] = None
     min_importance: float = 0.0
     max_results: int = 10
     include_links: bool = True
@@ -57,10 +53,10 @@ class MemoryUpdateRequest:
     """Request for updating a memory."""
 
     memory_id: int
-    content: str = None
-    importance_score: float = None
-    status: str = None
-    evolution_reason: str = None
+    content: Optional[str] = None
+    importance_score: Optional[float] = None
+    status: Optional[str] = None
+    evolution_reason: Optional[str] = None
     auto_relink: bool = True
 
 
@@ -78,7 +74,7 @@ class MemoryManager:
     - Performance optimization
     """
 
-    def __init__(self, config: Dict = None):
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
         """Initialize Memory Manager."""
         self.config = config or self._load_default_config()
 
@@ -95,7 +91,7 @@ class MemoryManager:
         )
 
         # Memory cache for performance
-        self.memory_cache = {}
+        self.memory_cache: Dict[str, List[Dict[str, Any]]] = {}
         self.cache_size = self.config.get("cache_size", 1000)
         self.cache_lock = threading.Lock()
 
@@ -117,7 +113,7 @@ class MemoryManager:
 
         logger.info("Memory Manager initialized successfully")
 
-    def _load_default_config(self) -> Dict:
+    def _load_default_config(self) -> Dict[str, Any]:
         """Load default configuration."""
         return {
             "database_path": "../data/memory_system.db",
@@ -128,13 +124,14 @@ class MemoryManager:
             "cursor_monitoring_enabled": True,
             "semantic_search_enabled": True,
             "max_memories": 10000,
-            "importance_threshold": 0.3,
         }
 
     def _start_background_tasks(self):
         """Start background tasks."""
         # Start periodic cleanup
-        cleanup_thread = threading.Thread(target=self._periodic_cleanup, daemon=True)
+        cleanup_thread = threading.Thread(
+            target=self._periodic_cleanup, daemon=True
+        )
         cleanup_thread.start()
 
         # Start Cursor monitoring if enabled
@@ -150,7 +147,7 @@ class MemoryManager:
             else:
                 logger.warning("Cursor monitoring failed to start")
         except Exception as e:
-            logger.error(f"Error starting Cursor monitoring: {e}")
+            logger.error("Error starting Cursor monitoring: %s", e)
 
     def _periodic_cleanup(self):
         """Periodic cleanup of old memories."""
@@ -164,14 +161,13 @@ class MemoryManager:
                 self._cleanup_old_memories()
 
             except Exception as e:
-                logger.error(f"Error in periodic cleanup: {e}")
+                logger.error("Error in periodic cleanup: %s", e)
 
     def _cleanup_old_memories(self):
         """Clean up old, low-importance memories."""
         try:
             # Get cleanup settings
             max_memories = self.config.get("max_memories", 10000)
-            importance_threshold = self.config.get("importance_threshold", 0.3)
 
             # Count current memories
             stats = self.database.get_system_stats()
@@ -180,13 +176,13 @@ class MemoryManager:
             if current_count > max_memories:
                 # Archive old memories
                 archived_count = self.database.cleanup_old_memories(days_old=30)
-                logger.info(f"Archived {archived_count} old memories")
+                logger.info("Archived %d old memories", archived_count)
 
                 # Clear cache
                 self._clear_cache()
 
         except Exception as e:
-            logger.error(f"Error in memory cleanup: {e}")
+            logger.error("Error in memory cleanup: %s", e)
 
     # ================================
     # CORE MEMORY OPERATIONS
@@ -202,538 +198,651 @@ class MemoryManager:
                 request.importance_score = self.importance_scorer.calculate_importance(
                     content=request.content,
                     memory_type=request.memory_type,
-                    context=request.context,
-                    metadata=request.metadata,
+                    context=request.context or "",
+                    metadata=request.metadata or {},
                 )
 
             # Store memory in database
             memory_id = self.database.store_memory(
                 content=request.content,
-                context=request.context,
                 memory_type=request.memory_type,
                 importance_score=request.importance_score,
+                context=request.context,
                 project_path=request.project_path,
                 cursor_session_id=request.cursor_session_id,
                 metadata=request.metadata,
             )
 
             # Auto-link if enabled
-            if request.auto_link and self.auto_linking_enabled:
-                self._auto_link_memory(memory_id, request.content, request.context)
+            if request.auto_link and memory_id is not None:
+                self._auto_link_memory(
+                    memory_id, request.content, request.context
+                )
 
             # Update cache
-            self._update_memory_cache(memory_id)
+            if memory_id is not None:
+                self._update_memory_cache(memory_id)
 
             # Update metrics
             self.metrics["total_memories"] += 1
 
             processing_time = (datetime.now() - start_time).total_seconds()
             logger.info(
-                f"Memory created: {memory_id} (importance: {request.importance_score:.3f}, time: {processing_time:.3f}s)"
+                "Memory created in %.3f seconds (ID: %s)",
+                processing_time,
+                memory_id,
             )
 
-            return memory_id
+            return memory_id or 0
 
         except Exception as e:
-            logger.error(f"Error creating memory: {e}")
-            raise
+            logger.error("Error creating memory: %s", e)
+            return 0
 
-    def search_memories(self, request: MemorySearchRequest) -> List[Dict]:
-        """Search for memories."""
+    def search_memories(self, request: MemorySearchRequest) -> List[Dict[str, Any]]:
+        """Search memories based on criteria."""
         try:
             start_time = datetime.now()
 
             # Check cache first
             cache_key = self._generate_cache_key(request)
             cached_result = self._get_from_cache(cache_key)
-
-            if cached_result:
+            if cached_result is not None:
                 self.metrics["cache_hits"] += 1
                 return cached_result
 
-            # Search in database
-            memories = self.database.retrieve_memories(
-                query=request.query,
-                memory_type=request.memory_type,
-                project_path=request.project_path,
-                limit=request.max_results,
-                min_importance=request.min_importance,
-            )
+            self.metrics["cache_misses"] += 1
 
-            # Add links if requested
+            # Build search parameters
+            search_params = {
+                "query": request.query,
+                "memory_type": request.memory_type,
+                "project_path": request.project_path,
+                "min_importance": request.min_importance,
+                "limit": request.max_results,
+            }
+
+            # Remove None values
+            search_params = {k: v for k, v in search_params.items() if v is not None}
+
+            # Search database
+            memories = self.database.retrieve_memories(**search_params)
+
+            # Enhance with semantic search if enabled
+            if request.semantic_search and request.query:
+                memories = self._enhance_with_semantic_search(
+                    memories, request.query
+                )
+
+            # Include links if requested
             if request.include_links:
                 for memory in memories:
-                    links = self.database.get_memory_links(memory["id"])
-                    memory["links"] = links
+                    memory["links"] = self.database.get_memory_links(
+                        memory["id"]
+                    )
 
-            # Semantic search enhancement (if enabled)
-            if request.semantic_search and self.config.get(
-                "semantic_search_enabled", True
-            ):
-                memories = self._enhance_with_semantic_search(memories, request.query)
-
-            # Cache result
+            # Cache results
             self._add_to_cache(cache_key, memories)
-            self.metrics["cache_misses"] += 1
 
             # Update metrics
             self.metrics["search_requests"] += 1
             processing_time = (datetime.now() - start_time).total_seconds()
-            current_avg = self.metrics["avg_search_time"]
-            self.metrics["avg_search_time"] = (current_avg + processing_time) / 2
+            self.metrics["avg_search_time"] = (
+                self.metrics["avg_search_time"] + processing_time
+            ) / 2
 
             logger.info(
-                f"Search completed: {len(memories)} results (time: {processing_time:.3f}s)"
+                "Search completed in %.3f seconds (%d results)",
+                processing_time,
+                len(memories),
             )
 
             return memories
 
         except Exception as e:
-            logger.error(f"Error searching memories: {e}")
-            raise
+            logger.error("Error searching memories: %s", e)
+            return []
 
     def update_memory(self, request: MemoryUpdateRequest) -> bool:
         """Update an existing memory."""
         try:
             # Get current memory
-            current_memories = self.database.retrieve_memories(limit=1)
-            current_memory = None
-
-            for memory in current_memories:
-                if memory["id"] == request.memory_id:
-                    current_memory = memory
-                    break
-
+            current_memory = self.database.retrieve_memory(request.memory_id)
             if not current_memory:
-                logger.warning(f"Memory not found for update: {request.memory_id}")
+                logger.warning("Memory %d not found", request.memory_id)
                 return False
 
-            # Update importance score if content changed
-            if request.content and request.importance_score is None:
-                request.importance_score = self.importance_scorer.calculate_importance(
-                    content=request.content,
-                    memory_type=current_memory["memory_type"],
-                    context=current_memory["context"],
-                    metadata=current_memory,
-                )
+            # Prepare update data
+            updates = []
+            if request.content is not None:
+                updates.append(("content", request.content))
+            if request.importance_score is not None:
+                updates.append(("importance_score", request.importance_score))
+            if request.status is not None:
+                updates.append(("status", request.status))
 
             # Update in database
             success = self.database.update_memory(
-                memory_id=request.memory_id,
-                content=request.content,
-                importance_score=request.importance_score,
-                status=request.status,
-                evolution_reason=request.evolution_reason,
+                request.memory_id, updates
             )
 
-            if success:
-                # Re-link if content changed
-                if request.auto_relink and request.content:
-                    self._auto_link_memory(
-                        request.memory_id, request.content, current_memory["context"]
-                    )
+            if success and request.auto_relink:
+                # Re-link memory
+                content = request.content or current_memory["content"]
+                self._auto_link_memory(
+                    request.memory_id, content, current_memory.get("context")
+                )
 
-                # Update cache
+            # Update cache
+            if success:
                 self._update_memory_cache(request.memory_id)
 
-                logger.info(f"Memory updated: {request.memory_id}")
-
+            logger.info("Memory %d updated successfully", request.memory_id)
             return success
 
         except Exception as e:
-            logger.error(f"Error updating memory: {e}")
-            raise
+            logger.error("Error updating memory: %s", e)
+            return False
 
     def delete_memory(self, memory_id: int, soft_delete: bool = True) -> bool:
         """Delete a memory."""
         try:
             success = self.database.delete_memory(memory_id, soft_delete)
-
             if success:
-                # Remove from cache
                 self._remove_from_cache(memory_id)
-
-                # Update metrics
-                self.metrics["total_memories"] -= 1
-
-                logger.info(f"Memory deleted: {memory_id} (soft: {soft_delete})")
-
+                logger.info("Memory %d deleted successfully", memory_id)
             return success
 
         except Exception as e:
-            logger.error(f"Error deleting memory: {e}")
-            raise
-
-    # ================================
-    # MEMORY EVOLUTION (Mem0 inspired)
-    # ================================
+            logger.error("Error deleting memory: %s", e)
+            return False
 
     def process_user_interaction(
         self,
         user_input: str,
         ai_response: str,
         context: str,
-        cursor_session_id: str = None,
-    ) -> Dict:
-        """Process user-AI interaction and evolve memory."""
+        cursor_session_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Process a user-AI interaction and evolve memory."""
         try:
-            # Use evolution engine
-            result = self.evolution_engine.process_interaction(
-                user_input=user_input,
-                ai_response=ai_response,
-                context=context,
-                cursor_session_id=cursor_session_id,
-            )
+            # Extract facts from interaction
+            extracted_facts = self._extract_facts(user_input, ai_response)
 
-            # Update cache for any created/updated memories
-            for action in result["actions_taken"]:
-                if action["action"] in ["ADD", "UPDATE"]:
-                    self._update_memory_cache(action["memory_id"])
+            actions_taken = []
 
-            return result
+            for fact in extracted_facts:
+                # Determine action needed
+                action = self._determine_action(fact, context)
 
-        except Exception as e:
-            logger.error(f"Error processing interaction: {e}")
-            raise
+                if action == "ADD":
+                    memory_id = self.database.store_memory(
+                        content=fact["content"],
+                        memory_type="fact",
+                        context=context,
+                        cursor_session_id=cursor_session_id,
+                    )
+                    actions_taken.append({"action": "ADD", "memory_id": memory_id})
 
-    def evolve_memory_from_cursor(
-        self, conversations: List[CursorConversation]
-    ) -> Dict:
-        """Evolve memory from Cursor conversations."""
-        try:
-            evolution_results = []
+                elif action == "UPDATE":
+                    related_memory = self._find_related_memory(fact["content"])
+                    if related_memory:
+                        self.database.update_memory(
+                            related_memory["id"],
+                            [("content", fact["content"])],
+                        )
+                        actions_taken.append(
+                            {"action": "UPDATE", "memory_id": related_memory["id"]}
+                        )
 
-            for conversation in conversations:
-                # Convert conversation to interactions
-                messages = conversation.messages
-
-                for i in range(0, len(messages) - 1, 2):
-                    if i + 1 < len(messages):
-                        user_msg = messages[i]
-                        ai_msg = messages[i + 1]
-
-                        if (
-                            user_msg.get("role") == "user"
-                            and ai_msg.get("role") == "assistant"
-                        ):
-                            result = self.process_user_interaction(
-                                user_input=user_msg.get("content", ""),
-                                ai_response=ai_msg.get("content", ""),
-                                context=f"Project: {conversation.project_path}",
-                                cursor_session_id=conversation.session_id,
-                            )
-                            evolution_results.append(result)
+                elif action == "DELETE":
+                    contradicted_memory = self._find_contradicted_memory(
+                        fact["content"]
+                    )
+                    if contradicted_memory is not None:
+                        self.database.delete_memory(contradicted_memory["id"])
+                        actions_taken.append(
+                            {
+                                "action": "DELETE",
+                                "memory_id": contradicted_memory["id"],
+                            }
+                        )
 
             return {
-                "conversations_processed": len(conversations),
-                "evolution_results": evolution_results,
+                "facts_extracted": len(extracted_facts),
+                "actions_taken": actions_taken,
+                "success": True,
             }
 
         except Exception as e:
-            logger.error(f"Error evolving memory from Cursor: {e}")
-            raise
+            logger.error("Error processing interaction: %s", e)
+            return {"success": False, "error": str(e)}
 
-    # ================================
-    # AUTO-LINKING (Zettelkasten inspired)
-    # ================================
-
-    def _auto_link_memory(self, memory_id: int, content: str, context: str = None):
-        """Automatically create links to related memories."""
+    def evolve_memory_from_cursor(
+        self, conversations: List[CursorConversation]
+    ) -> Dict[str, Any]:
+        """Evolve memory from Cursor conversations."""
         try:
-            if not self.auto_linking_enabled:
-                return
+            total_memories = 0
+            evolved_count = 0
 
-            # Find similar memories
-            similar_memories = self.database.retrieve_memories(
-                query=content[:100],  # Use first 100 chars for similarity
-                limit=10,
-                min_importance=0.3,
-            )
+            for conversation in conversations:
+                # Extract memories from conversation
+                memories = self._extract_memories_from_conversation(conversation)
 
-            # Create links to similar memories
-            for similar_memory in similar_memories:
-                if similar_memory["id"] != memory_id:
-                    # Calculate link strength
-                    link_strength = self._calculate_link_strength(
-                        content, similar_memory["content"]
+                for memory_data in memories:
+                    total_memories += 1
+
+                    # Check if memory already exists
+                    existing = self.database.retrieve_memories(
+                        query=memory_data["content"], limit=1
                     )
 
-                    if link_strength >= self.linking_threshold:
-                        # Determine relationship type
-                        relationship_type = self._determine_relationship_type(
-                            content, similar_memory["content"]
+                    if existing:
+                        # Update existing memory
+                        self.database.update_memory(
+                            existing[0]["id"],
+                            [("content", memory_data["content"])],
+                        )
+                    else:
+                        # Create new memory
+                        self.database.store_memory(
+                            content=memory_data["content"],
+                            memory_type="conversation",
+                            context=memory_data.get("context"),
                         )
 
+                    evolved_count += 1
+
+            return {
+                "total_conversations": len(conversations),
+                "total_memories": total_memories,
+                "evolved_count": evolved_count,
+                "success": True,
+            }
+
+        except Exception as e:
+            logger.error("Error evolving memory from Cursor: %s", e)
+            return {"success": False, "error": str(e)}
+
+    def _auto_link_memory(
+        self, memory_id: int, content: str, context: Optional[str] = None
+    ):
+        """Automatically link memory to related memories."""
+        if not self.auto_linking_enabled or memory_id is None:
+            return
+
+        try:
+            # Find related memories
+            related_memories = self.database.retrieve_memories(
+                query=content, limit=10
+            )
+
+            for related in related_memories:
+                if related["id"] != memory_id:
+                    # Calculate link strength
+                    strength = self._calculate_link_strength(
+                        content, related["content"]
+                    )
+
+                    if strength >= self.linking_threshold:
                         # Create link
+                        relationship_type = self._determine_relationship_type(
+                            content, related["content"]
+                        )
+
                         self.database.create_memory_link(
-                            memory_id_1=memory_id,
-                            memory_id_2=similar_memory["id"],
-                            relationship_type=relationship_type,
-                            strength=link_strength,
-                            is_auto_generated=True,
+                            memory_id, related["id"], relationship_type, strength
                         )
 
         except Exception as e:
-            logger.error(f"Error auto-linking memory {memory_id}: {e}")
+            logger.error("Error auto-linking memory: %s", e)
 
     def _calculate_link_strength(self, content1: str, content2: str) -> float:
-        """Calculate link strength between two contents."""
-        # Simple word overlap calculation
-        words1 = set(content1.lower().split())
-        words2 = set(content2.lower().split())
-
-        if not words1 or not words2:
-            return 0.0
-
-        intersection = len(words1 & words2)
-        union = len(words1 | words2)
-
-        return intersection / union if union > 0 else 0.0
-
-    def _determine_relationship_type(self, content1: str, content2: str) -> str:
-        """Determine relationship type between two contents."""
-        # Simple heuristic-based relationship detection
-
-        # Check for contradiction
-        if any(word in content1.lower() for word in ["not", "no", "never", "wrong"]):
-            return "contradicts"
-
-        # Check for causation
-        if any(word in content1.lower() for word in ["because", "since", "due to"]):
-            return "caused_by"
-
-        # Check for examples
-        if any(word in content1.lower() for word in ["example", "instance", "such as"]):
-            return "example_of"
-
-        # Check for dependency
-        if any(word in content1.lower() for word in ["depends", "requires", "needs"]):
-            return "depends_on"
-
-        # Default to related
-        return "related_to"
-
-    # ================================
-    # SEMANTIC SEARCH ENHANCEMENT
-    # ================================
-
-    def _enhance_with_semantic_search(
-        self, memories: List[Dict], query: str
-    ) -> List[Dict]:
-        """Enhance search results with semantic similarity."""
+        """Calculate semantic similarity between two contents."""
         try:
-            # This is a placeholder for semantic search enhancement
-            # In a real implementation, you would use sentence transformers
-            # or other embedding models to calculate semantic similarity
+            # Simple keyword overlap for now
+            words1 = set(content1.lower().split())
+            words2 = set(content2.lower().split())
 
-            # For now, just return the memories as-is
-            return memories
+            if not words1 or not words2:
+                return 0.0
+
+            intersection = words1.intersection(words2)
+            union = words1.union(words2)
+
+            return len(intersection) / len(union)
 
         except Exception as e:
-            logger.error(f"Error in semantic search enhancement: {e}")
-            return memories
+            logger.error("Error calculating link strength: %s", e)
+            return 0.0
 
-    # ================================
-    # CACHE MANAGEMENT
-    # ================================
+    def _determine_relationship_type(self, content1: str, content2: str) -> str:
+        """Determine the type of relationship between two memories."""
+        # Simple heuristic for now
+        if any(word in content2.lower() for word in content1.lower().split()[:3]):
+            return "elaborates"
+        elif any(word in content1.lower() for word in content2.lower().split()[:3]):
+            return "elaborated_by"
+        else:
+            return "related"
+
+    def _enhance_with_semantic_search(
+        self, memories: List[Dict[str, Any]], query: str
+    ) -> List[Dict[str, Any]]:
+        """Enhance search results with semantic similarity."""
+        try:
+            # Simple semantic enhancement for now
+            enhanced_memories = []
+            for memory in memories:
+                relevance = self._calculate_relevance(query, memory["content"])
+                memory["semantic_relevance"] = relevance
+                enhanced_memories.append(memory)
+
+            # Sort by semantic relevance
+            enhanced_memories.sort(
+                key=lambda x: x.get("semantic_relevance", 0), reverse=True
+            )
+
+            return enhanced_memories
+
+        except Exception as e:
+            logger.error("Error in semantic search enhancement: %s", e)
+            return memories
 
     def _generate_cache_key(self, request: MemorySearchRequest) -> str:
         """Generate cache key for search request."""
-        key_data = {
-            "query": request.query,
-            "memory_type": request.memory_type,
-            "project_path": request.project_path,
-            "min_importance": request.min_importance,
-            "max_results": request.max_results,
-        }
+        try:
+            key_data = {
+                "query": request.query,
+                "memory_type": request.memory_type,
+                "project_path": request.project_path,
+                "min_importance": request.min_importance,
+                "max_results": request.max_results,
+                "include_links": request.include_links,
+                "semantic_search": request.semantic_search,
+            }
 
-        key_string = json.dumps(key_data, sort_keys=True)
-        return hashlib.md5(key_string.encode()).hexdigest()
+            # Create hash of key data
+            key_string = json.dumps(key_data, sort_keys=True)
+            return hashlib.md5(key_string.encode()).hexdigest()
 
-    def _get_from_cache(self, key: str) -> Optional[List[Dict]]:
-        """Get result from cache."""
-        with self.cache_lock:
-            return self.memory_cache.get(key)
+        except Exception as e:
+            logger.error("Error generating cache key: %s", e)
+            return ""
 
-    def _add_to_cache(self, key: str, data: List[Dict]):
-        """Add result to cache."""
-        with self.cache_lock:
-            # Remove oldest entries if cache is full
-            if len(self.memory_cache) >= self.cache_size:
-                oldest_key = next(iter(self.memory_cache))
-                del self.memory_cache[oldest_key]
+    def _get_from_cache(self, key: str) -> Optional[List[Dict[str, Any]]]:
+        """Get data from cache."""
+        try:
+            with self.cache_lock:
+                return self.memory_cache.get(key)
+        except Exception as e:
+            logger.error("Error getting from cache: %s", e)
+            return None
 
-            self.memory_cache[key] = data
+    def _add_to_cache(self, key: str, data: List[Dict[str, Any]]):
+        """Add data to cache."""
+        try:
+            with self.cache_lock:
+                # Check cache size
+                if len(self.memory_cache) >= self.cache_size:
+                    # Remove oldest entry
+                    oldest_key = next(iter(self.memory_cache))
+                    del self.memory_cache[oldest_key]
+
+                self.memory_cache[key] = data
+
+        except Exception as e:
+            logger.error("Error adding to cache: %s", e)
 
     def _update_memory_cache(self, memory_id: int):
-        """Update cache after memory change."""
-        with self.cache_lock:
-            # Simple cache invalidation - clear all entries
-            # In a more sophisticated implementation, you would
-            # selectively invalidate only affected entries
-            self.memory_cache.clear()
+        """Update cache when memory is modified."""
+        try:
+            with self.cache_lock:
+                # Remove cache entries that might be affected
+                keys_to_remove = []
+                for key in self.memory_cache:
+                    # Simple heuristic: remove if key contains memory_id
+                    if str(memory_id) in key:
+                        keys_to_remove.append(key)
+
+                for key in keys_to_remove:
+                    del self.memory_cache[key]
+
+        except Exception as e:
+            logger.error("Error updating memory cache: %s", e)
 
     def _remove_from_cache(self, memory_id: int):
         """Remove memory from cache."""
-        with self.cache_lock:
-            # Simple cache invalidation
-            self.memory_cache.clear()
+        self._update_memory_cache(memory_id)
 
     def _clear_cache(self):
         """Clear entire cache."""
-        with self.cache_lock:
-            self.memory_cache.clear()
-
-    # ================================
-    # CONTEXT SUGGESTIONS
-    # ================================
+        try:
+            with self.cache_lock:
+                self.memory_cache.clear()
+        except Exception as e:
+            logger.error("Error clearing cache: %s", e)
 
     def suggest_context_for_cursor(
-        self, current_input: str, project_path: str = None, max_suggestions: int = 5
-    ) -> List[Dict]:
+        self,
+        current_input: str,
+        project_path: Optional[str] = None,
+        max_suggestions: int = 5,
+    ) -> List[Dict[str, Any]]:
         """Suggest relevant context for Cursor based on current input."""
         try:
             # Search for relevant memories
             search_request = MemorySearchRequest(
                 query=current_input,
                 project_path=project_path,
-                max_results=max_suggestions * 2,  # Get more to filter
-                min_importance=0.5,
-                include_links=True,
+                max_results=max_suggestions * 2,  # Get more for filtering
+                semantic_search=True,
             )
 
             memories = self.search_memories(search_request)
 
-            # Convert to context suggestions
+            # Calculate relevance and filter
             suggestions = []
-            for memory in memories[:max_suggestions]:
-                suggestion = {
-                    "content": memory["content"],
-                    "type": memory["memory_type"],
-                    "importance": memory["importance_score"],
-                    "relevance": self._calculate_relevance(
-                        current_input, memory["content"]
-                    ),
-                    "context": memory.get("context", ""),
-                    "memory_id": memory["id"],
-                }
-                suggestions.append(suggestion)
+            for memory in memories:
+                relevance = self._calculate_relevance(
+                    current_input, memory["content"]
+                )
+                if relevance > 0.3:  # Minimum relevance threshold
+                    suggestions.append(
+                        {
+                            "memory_id": memory["id"],
+                            "content": memory["content"],
+                            "relevance": relevance,
+                            "memory_type": memory.get("memory_type", "unknown"),
+                        }
+                    )
 
-            # Sort by relevance
+            # Sort by relevance and limit
             suggestions.sort(key=lambda x: x["relevance"], reverse=True)
-
-            return suggestions
+            return suggestions[:max_suggestions]
 
         except Exception as e:
-            logger.error(f"Error suggesting context: {e}")
+            logger.error("Error suggesting context: %s", e)
             return []
 
     def _calculate_relevance(self, input_text: str, memory_content: str) -> float:
-        """Calculate relevance score between input and memory content."""
-        # Simple word overlap relevance
-        input_words = set(input_text.lower().split())
-        memory_words = set(memory_content.lower().split())
+        """Calculate relevance between input text and memory content."""
+        try:
+            # Simple keyword-based relevance
+            input_words = set(input_text.lower().split())
+            memory_words = set(memory_content.lower().split())
 
-        if not input_words or not memory_words:
+            if not input_words or not memory_words:
+                return 0.0
+
+            intersection = input_words.intersection(memory_words)
+            return len(intersection) / len(input_words)
+
+        except Exception as e:
+            logger.error("Error calculating relevance: %s", e)
             return 0.0
 
-        intersection = len(input_words & memory_words)
-        union = len(input_words | memory_words)
-
-        return intersection / union if union > 0 else 0.0
-
-    # ================================
-    # SYSTEM MANAGEMENT
-    # ================================
-
-    def get_system_status(self) -> Dict:
-        """Get comprehensive system status."""
+    def get_system_status(self) -> Dict[str, Any]:
+        """Get system status and metrics."""
         try:
             # Get database stats
             db_stats = self.database.get_system_stats()
 
-            # Get cache stats
-            cache_stats = {
-                "cache_size": len(self.memory_cache),
-                "cache_hits": self.metrics["cache_hits"],
-                "cache_misses": self.metrics["cache_misses"],
-                "hit_rate": (
-                    self.metrics["cache_hits"]
-                    / (self.metrics["cache_hits"] + self.metrics["cache_misses"])
-                    if (self.metrics["cache_hits"] + self.metrics["cache_misses"]) > 0
-                    else 0.0
-                ),
-            }
-
-            # Get cursor integration status
+            # Get Cursor integration status
             cursor_status = {
-                "monitoring_enabled": self.config.get(
-                    "cursor_monitoring_enabled", True
+                "monitoring_active": getattr(
+                    self.cursor_integration, "is_monitoring_active", False
                 ),
-                "monitoring_active": self.cursor_integration.monitor.monitoring,
+                "last_sync": getattr(
+                    self.cursor_integration, "get_last_sync_time", lambda: None
+                )(),
             }
 
             return {
                 "database": db_stats,
-                "cache": cache_stats,
                 "cursor_integration": cursor_status,
-                "performance": self.metrics,
-                "config": self.config,
+                "cache": {
+                    "size": len(self.memory_cache),
+                    "max_size": self.cache_size,
+                    "hits": self.metrics["cache_hits"],
+                    "misses": self.metrics["cache_misses"],
+                },
+                "metrics": self.metrics,
+                "config": {
+                    "auto_linking_enabled": self.auto_linking_enabled,
+                    "linking_threshold": self.linking_threshold,
+                },
             }
 
         except Exception as e:
-            logger.error(f"Error getting system status: {e}")
+            logger.error("Error getting system status: %s", e)
             return {"error": str(e)}
 
     def shutdown(self):
-        """Shutdown memory manager."""
+        """Shutdown the memory manager."""
         try:
             # Stop Cursor monitoring
-            self.cursor_integration.stop_real_time_monitoring()
+            if hasattr(self.cursor_integration, "stop_monitoring"):
+                self.cursor_integration.stop_monitoring()
 
             # Clear cache
             self._clear_cache()
 
-            # Close database
-            self.database.close()
+            # Close database connections
+            if hasattr(self.database, "close"):
+                self.database.close()
 
-            logger.info("Memory Manager shutdown completed")
+            logger.info("Memory Manager shutdown complete")
 
         except Exception as e:
-            logger.error(f"Error during shutdown: {e}")
+            logger.error("Error during shutdown: %s", e)
 
+    # ================================
+    # HELPER METHODS
+    # ================================
 
-# Example usage
-if __name__ == "__main__":
-    # Create memory manager
-    manager = MemoryManager()
+    def _extract_facts(self, user_input: str, ai_response: str) -> List[Dict[str, Any]]:
+        """Extract facts from user-AI interaction."""
+        try:
+            facts = []
 
-    # Test memory creation
-    request = MemoryCreationRequest(
-        content="We decided to use React for the frontend framework",
-        memory_type="decision",
-        context="Frontend architecture discussion",
-        project_path="/home/user/myproject",
-    )
+            # Simple fact extraction for now
+            # Look for declarative statements in AI response
+            sentences = ai_response.split(".")
+            for sentence in sentences:
+                sentence = sentence.strip()
+                if len(sentence) > 10 and any(
+                    word in sentence.lower()
+                    for word in ["is", "are", "was", "were", "has", "have"]
+                ):
+                    facts.append({"content": sentence, "source": "ai_response"})
 
-    memory_id = manager.create_memory(request)
-    print(f"Created memory: {memory_id}")
+            return facts
 
-    # Test memory search
-    search_request = MemorySearchRequest(query="React frontend", max_results=5)
+        except Exception as e:
+            logger.error("Error extracting facts: %s", e)
+            return []
 
-    results = manager.search_memories(search_request)
-    print(f"Search results: {len(results)}")
+    def _determine_action(
+        self, fact: Dict[str, Any], context: str
+    ) -> str:
+        """Determine what action to take for a fact."""
+        try:
+            # Simple action determination for now
+            content = fact["content"].lower()
 
-    # Test context suggestions
-    suggestions = manager.suggest_context_for_cursor(
-        "How to set up React components?", project_path="/home/user/myproject"
-    )
-    print(f"Context suggestions: {len(suggestions)}")
+            # Check for contradictions
+            if any(word in content for word in ["not", "never", "false", "wrong"]):
+                return "DELETE"
 
-    # Get system status
-    status = manager.get_system_status()
-    print(f"System status: {status}")
+            # Check for updates
+            if any(word in content for word in ["update", "change", "modify"]):
+                return "UPDATE"
 
-    # Shutdown
-    manager.shutdown()
+            # Default to ADD
+            return "ADD"
+
+        except Exception as e:
+            logger.error("Error determining action: %s", e)
+            return "NOOP"
+
+    def _find_related_memory(self, content: str) -> Optional[Dict[str, Any]]:
+        """Find a related memory for the given content."""
+        try:
+            memories = self.database.retrieve_memories(query=content, limit=1)
+            return memories[0] if memories else None
+
+        except Exception as e:
+            logger.error("Error finding related memory: %s", e)
+            return None
+
+    def _find_contradicted_memory(self, content: str) -> Optional[Dict[str, Any]]:
+        """Find a memory that contradicts the given content."""
+        try:
+            # Look for memories with opposite meaning
+            opposite_keywords = ["not", "never", "false", "wrong"]
+            if any(word in content.lower() for word in opposite_keywords):
+                # Find positive version
+                positive_content = content.lower()
+                for word in opposite_keywords:
+                    positive_content = positive_content.replace(word, "")
+                positive_content = positive_content.strip()
+
+                memories = self.database.retrieve_memories(
+                    query=positive_content, limit=1
+                )
+                return memories[0] if memories else None
+
+            return None
+
+        except Exception as e:
+            logger.error("Error finding contradicted memory: %s", e)
+            return None
+
+    def _extract_memories_from_conversation(
+        self, conversation: CursorConversation
+    ) -> List[Dict[str, Any]]:
+        """Extract memories from a Cursor conversation."""
+        try:
+            memories = []
+
+            # Extract from conversation content
+            if hasattr(conversation, "content") and conversation.content:
+                # Split into sentences and extract facts
+                sentences = conversation.content.split(".")
+                for sentence in sentences:
+                    sentence = sentence.strip()
+                    if len(sentence) > 10:
+                        memories.append(
+                            {
+                                "content": sentence,
+                                "context": getattr(conversation, "context", ""),
+                            }
+                        )
+
+            return memories
+
+        except Exception as e:
+            logger.error("Error extracting memories from conversation: %s", e)
+            return []

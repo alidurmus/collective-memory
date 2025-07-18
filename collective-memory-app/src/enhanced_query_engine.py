@@ -142,27 +142,47 @@ class EnhancedQueryEngine(QueryEngine):
             logging.warning(f"NLTK initialization failed: {e}")
 
     def _initialize_models(self):
-        """Initialize ML models for semantic search"""
+        """Initialize ML models for semantic search with lazy loading"""
         if not self.ml_available:
             return
 
         try:
-            # Load sentence transformer model (lightweight model for faster processing)
-            self.sentence_model = SentenceTransformer("all-MiniLM-L6-v2")
-            logging.info("✅ Sentence transformer model loaded")
-
-            # Initialize TF-IDF vectorizer
-            self.tfidf_vectorizer = TfidfVectorizer(
-                max_features=5000,
-                stop_words="english",
-                ngram_range=(1, 2),
-                max_df=0.8,
-                min_df=2,
-            )
-            logging.info("✅ TF-IDF vectorizer initialized")
+            # Initialize models as None - they will be loaded on first use
+            self.sentence_model = None
+            self.tfidf_vectorizer = None
+            self._models_initialized = False
+            logging.info("✅ ML models configured for lazy loading")
 
         except Exception as e:
             logging.error(f"❌ Model initialization failed: {e}")
+            self.ml_available = False
+
+    def _ensure_models_loaded(self):
+        """Ensure models are loaded (lazy loading)"""
+        if not self.ml_available or self._models_initialized:
+            return
+
+        try:
+            # Load sentence transformer model (lightweight model for faster processing)
+            if self.sentence_model is None:
+                self.sentence_model = SentenceTransformer("all-MiniLM-L6-v2")
+                logging.info("✅ Sentence transformer model loaded")
+
+            # Initialize TF-IDF vectorizer
+            if self.tfidf_vectorizer is None:
+                self.tfidf_vectorizer = TfidfVectorizer(
+                    max_features=5000,
+                    stop_words="english",
+                    ngram_range=(1, 2),
+                    max_df=0.8,
+                    min_df=2,
+                )
+                logging.info("✅ TF-IDF vectorizer initialized")
+
+            self._models_initialized = True
+
+        except Exception as e:
+            logging.error(f"❌ Model loading failed: {e}")
             self.ml_available = False
 
     def _get_cache_key(self, query: EnhancedSearchQuery) -> str:
@@ -390,6 +410,13 @@ class EnhancedQueryEngine(QueryEngine):
             return results
 
         try:
+            # Ensure models are loaded before use
+            self._ensure_models_loaded()
+            
+            if not self._models_initialized:
+                logging.warning("Models not available, skipping semantic search")
+                return results
+
             # Generate query embedding
             query_embedding = self.sentence_model.encode([query.text])
 

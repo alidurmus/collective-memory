@@ -10,15 +10,22 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
 
+# Try to import tabulate, fallback to simple formatting
+try:
+    from tabulate import tabulate
+    TABULATE_AVAILABLE = True
+except ImportError:
+    TABULATE_AVAILABLE = False
+
 # Core imports
-from database_manager import DatabaseManager
-from file_monitor import DataFolderMonitor
-from content_indexer import ContentIndexer
-from query_engine import QueryEngine, SearchQuery, SearchResult
+from .database_manager import DatabaseManager
+from .file_monitor import DataFolderMonitor
+from .content_indexer import ContentIndexer
+from .query_engine import QueryEngine, SearchQuery, SearchResult
 
 # Enhanced imports
 try:
-    from enhanced_query_engine import (
+    from .enhanced_query_engine import (
         EnhancedQueryEngine,
         EnhancedSearchQuery,
         EnhancedSearchResult,
@@ -47,6 +54,16 @@ class TerminalInterface:
         (self.collective_memory_dir / "config").mkdir(exist_ok=True)
 
         self.database_manager = DatabaseManager(str(self.db_path))
+        
+        # Connect to database and initialize
+        if not self.database_manager.connect():
+            print("❌ Database connection failed")
+            return
+        
+        if not self.database_manager.initialize_database():
+            print("❌ Database initialization failed")
+            return
+            
         self.file_monitor = DataFolderMonitor(str(self.data_path))
         self.content_indexer = ContentIndexer()
 
@@ -61,6 +78,7 @@ class TerminalInterface:
             print("Using basic search mode")
 
         self.max_results_display = 20
+        self.preview_length = 150
 
         # Enhanced search settings
         self.semantic_search_enabled = True
@@ -86,9 +104,13 @@ class TerminalInterface:
         print("  quit          - Exit interactive mode")
         print()
 
+        interrupt_count = 0
+        max_interrupts = 3
+
         while True:
             try:
                 user_input = input("search> ").strip()
+                interrupt_count = 0  # Reset interrupt count on successful input
 
                 if not user_input:
                     continue
@@ -129,15 +151,24 @@ class TerminalInterface:
                 elif command == "settings" and self.use_enhanced:
                     self._show_search_settings()
                 else:
-                    print(
-                        f"Unknown command: {command}. Type 'help' for available commands."
-                    )
-
+                    print(f"Unknown command: {command}. Type 'help' for available commands.")
+                    
             except KeyboardInterrupt:
-                print("\n\nGoodbye!")
+                interrupt_count += 1
+                if interrupt_count >= max_interrupts:
+                    print(f"\n\nExiting due to {max_interrupts} consecutive interrupts...")
+                    break
+                else:
+                    remaining = max_interrupts - interrupt_count
+                    print(f"\nPress Ctrl+C {remaining} more time(s) to exit, or continue with commands...")
+                    
+            except EOFError:
+                print("\nEnd of input detected. Exiting...")
                 break
+                
             except Exception as e:
-                print(f"Error: {e}")
+                print(f"Error processing command: {e}")
+                print("Type 'help' for available commands or 'quit' to exit.")
 
     def _perform_semantic_search(self, query_text: str):
         """Perform enhanced semantic search"""
@@ -321,7 +352,7 @@ class TerminalInterface:
                 # Write header
                 f.write(f"# Enhanced Search Results\n\n")
                 f.write(f"**Query:** {query.text}\n")
-                f.write(f"**Date:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+                f.write(f"**Date:** {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')}\n")
                 f.write(f"**Results:** {len(results)}\n")
                 f.write(f"**Mode:** AI-Powered Semantic Search\n\n")
 
@@ -556,7 +587,7 @@ Examples:
                     elif part == "-d" and i + 1 < len(parts):
                         # Days ago
                         days = int(parts[i + 1])
-                        query.date_from = datetime.now() - timedelta(days=days)
+                        query.date_from = datetime.now(timezone.utc) - timedelta(days=days)
                         i += 2
                     elif part == "-s" and i + 1 < len(parts):
                         # Min size
@@ -653,7 +684,14 @@ Examples:
             )
 
         headers = ["#", "File", "Type", "Size", "Modified", "Score", "Preview"]
-        print(f"\n{tabulate(table_data, headers=headers, tablefmt='grid')}")
+        if TABULATE_AVAILABLE:
+            print(f"\n{tabulate(table_data, headers=headers, tablefmt='grid')}")
+        else:
+            # Simple table formatting fallback
+            print(f"\n{' | '.join(headers)}")
+            print("-" * 80)
+            for row in table_data:
+                print(f"{' | '.join(str(cell) for cell in row)}")
 
         # Highlights göster
         if results and results[0].match_highlights:

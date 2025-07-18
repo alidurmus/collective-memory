@@ -8,7 +8,7 @@ import psutil
 import time
 import json
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, asdict
@@ -63,7 +63,7 @@ class SystemHealthMonitor:
         # Monitoring state
         self.monitoring = False
         self.monitor_thread = None
-        self.start_time = datetime.now()
+        self.start_time = datetime.now(timezone.utc)
 
         # Counters
         self.search_requests = 0
@@ -150,7 +150,7 @@ class SystemHealthMonitor:
             pass
 
         return SystemMetrics(
-            timestamp=datetime.now().isoformat(),
+            timestamp=datetime.now(timezone.utc).isoformat(),
             cpu_percent=psutil.cpu_percent(interval=1),
             memory_percent=memory.percent,
             memory_used_gb=memory.used / 1024**3,
@@ -164,7 +164,7 @@ class SystemHealthMonitor:
 
     def _collect_application_metrics(self) -> ApplicationMetrics:
         """Collect application-specific metrics"""
-        uptime = (datetime.now() - self.start_time).total_seconds()
+        uptime = (datetime.now(timezone.utc) - self.start_time).total_seconds()
 
         # Calculate average response time
         avg_response_time = 0.0
@@ -175,7 +175,7 @@ class SystemHealthMonitor:
 
         # Mock values for now - these would be collected from actual app
         return ApplicationMetrics(
-            timestamp=datetime.now().isoformat(),
+            timestamp=datetime.now(timezone.utc).isoformat(),
             search_requests_count=self.search_requests,
             api_response_time_avg=avg_response_time,
             database_connections=1,  # SQLite typically 1 connection
