@@ -1,0 +1,8 @@
+s test search
+version
+stats
+semantic test
+history
+history search
+history --all
+quit

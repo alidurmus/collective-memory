@@ -3,10 +3,11 @@
     {
       "id": "collective-memory-agent-hooks",
       "name": "Collective Memory Agent Hooks",
-      "type": "agent_hooks",
+      "type": "hooks",
       "version": "1.0.0",
       "path": ".kiro/hooks/",
       "manifest": ".kiro/hooks/manifest.json",
+      "config": ".kiro/hooks/simple-hooks.json",
       "enabled": true,
       "auto_start": true,
       "description": "Otomatik geliştirme süreç yönetimi için akıllı hook sistemi",

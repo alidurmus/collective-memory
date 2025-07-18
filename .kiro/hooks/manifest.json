@@ -1,9 +1,11 @@
 {
+  "id": "collective-memory-agent-hooks",
   "name": "Agent Hooks",
   "version": "1.0.0",
   "description": "Otomatik geliştirme süreç hook'ları",
   "author": "Collective Memory Team",
   "kiro_version": ">=1.0.0",
+  "type": "hooks",
   "hooks": [
     {
       "id": "auto-test-on-save",

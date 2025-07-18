@@ -1,0 +1,111 @@
+{
+  "hooks": [
+    {
+      "id": "test-runner",
+      "name": "Test Çalıştırıcı",
+      "description": "Python ve JavaScript testlerini otomatik çalıştırır",
+      "icon": "🧪",
+      "enabled": true,
+      "trigger": {
+        "type": "file_save",
+        "patterns": ["**/*.py", "**/*.js", "**/*.ts"]
+      },
+      "command": "python .kiro/hooks/scripts/test-runner.py {file}",
+      "ui": {
+        "show_in_sidebar": true,
+        "category": "testing"
+      }
+    },
+    {
+      "id": "code-formatter",
+      "name": "Kod Formatçısı",
+      "description": "Kodu otomatik formatlar",
+      "icon": "✨",
+      "enabled": true,
+      "trigger": {
+        "type": "file_save",
+        "patterns": ["**/*.py", "**/*.js", "**/*.ts"]
+      },
+      "command": "python .kiro/hooks/scripts/format-code.py {file}",
+      "ui": {
+        "show_in_sidebar": true,
+        "category": "formatting"
+      }
+    },
+    {
+      "id": "security-scanner",
+      "name": "Güvenlik Tarayıcısı",
+      "description": "Güvenlik açıklarını tarar",
+      "icon": "🔒",
+      "enabled": true,
+      "trigger": {
+        "type": "manual"
+      },
+      "command": "python .kiro/hooks/scripts/security-scan.py",
+      "ui": {
+        "show_in_sidebar": true,
+        "category": "security",
+        "button_text": "Güvenlik Taraması Yap"
+      }
+    },
+    {
+      "id": "doc-generator",
+      "name": "Dokümantasyon Üretici",
+      "description": "API dokümantasyonunu günceller",
+      "icon": "📚",
+      "enabled": true,
+      "trigger": {
+        "type": "file_save",
+        "patterns": ["**/api/**/*.py"]
+      },
+      "command": "python .kiro/hooks/scripts/doc-generator.py",
+      "ui": {
+        "show_in_sidebar": true,
+        "category": "documentation"
+      }
+    },
+    {
+      "id": "health-checker",
+      "name": "Sistem Sağlık Kontrolü",
+      "description": "Sistem durumunu kontrol eder",
+      "icon": "🏥",
+      "enabled": true,
+      "trigger": {
+        "type": "scheduled",
+        "schedule": "*/30 * * * *"
+      },
+      "command": "python .kiro/hooks/scripts/health-check.py",
+      "ui": {
+        "show_in_sidebar": true,
+        "category": "monitoring"
+      }
+    }
+  ],
+  "categories": {
+    "testing": {
+      "name": "Test İşlemleri",
+      "icon": "🧪",
+      "color": "#4CAF50"
+    },
+    "formatting": {
+      "name": "Kod Formatlama",
+      "icon": "✨",
+      "color": "#2196F3"
+    },
+    "security": {
+      "name": "Güvenlik",
+      "icon": "🔒",
+      "color": "#F44336"
+    },
+    "documentation": {
+      "name": "Dokümantasyon",
+      "icon": "📚",
+      "color": "#FF9800"
+    },
+    "monitoring": {
+      "name": "İzleme",
+      "icon": "🏥",
+      "color": "#8BC34A"
+    }
+  }
+}
