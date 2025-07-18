@@ -77,7 +77,7 @@ class JSONChatManager:
         self.conversation_index = self._load_index()
 
         print(
-            f"{Fore.GREEN}📁 JSON Chat Manager initialized: {self.conversations_dir}{Style.RESET_ALL}"
+            f"{Fore.GREEN}[+] JSON Chat Manager initialized: {self.conversations_dir}{Style.RESET_ALL}"
         )
 
     def _ensure_directories(self):

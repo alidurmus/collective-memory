@@ -6,7 +6,7 @@ Enhanced semantic search capabilities ile güçlendirilmiş
 
 import os
 import argparse
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import List, Optional
 
@@ -57,11 +57,11 @@ class TerminalInterface:
         
         # Connect to database and initialize
         if not self.database_manager.connect():
-            print("❌ Database connection failed")
+            print("[-] Database connection failed")
             return
         
         if not self.database_manager.initialize_database():
-            print("❌ Database initialization failed")
+            print("[-] Database initialization failed")
             return
             
         self.file_monitor = DataFolderMonitor(str(self.data_path))
@@ -86,72 +86,36 @@ class TerminalInterface:
         self.entity_extraction_enabled = True
 
     def interactive_mode(self):
-        """İnteraktif mod - Enhanced features ile"""
-        print("\nCollective Memory Interactive Search")
-        print(f"Data Path: {self.data_path}")
-        if self.use_enhanced:
-            print("AI-Powered Semantic Search: Enabled")
-        print(f"Database: {self.db_path}")
-        print("\nCommands:")
-        print("  help          - Show help")
-        print("  stats         - Show database statistics")
-        print("  search <term> - Search for content")
-        if self.use_enhanced:
-            print("  semantic <term>   - Semantic search with AI scoring")
-            print("  intent <query>    - Analyze query intent")
-            print("  suggestions <term> - Get semantic suggestions")
-            print("  settings      - Show/modify search settings")
-        print("  quit          - Exit interactive mode")
-        print()
-
+        """Enhanced interactive mode with robust input handling"""
+        self._show_welcome_message()
+        
+        # Initialize interactive session state
         interrupt_count = 0
         max_interrupts = 3
-
+        command_history = []
+        
         while True:
             try:
-                user_input = input("search> ").strip()
-                interrupt_count = 0  # Reset interrupt count on successful input
-
+                # Get user input with proper error handling
+                user_input = self._get_user_input("search> ")
+                
+                # Reset interrupt count on successful input
+                interrupt_count = 0
+                
+                # Skip empty input
                 if not user_input:
                     continue
-
-                parts = user_input.split(" ", 1)
-                command = parts[0].lower()
-                args = parts[1] if len(parts) > 1 else ""
-
-                if command == "quit" or command == "exit":
-                    print("\nGoodbye!")
-                    break
-                elif command == "help":
-                    self._show_help()
-                elif command == "stats":
-                    self._show_statistics()
-                elif command == "search":
-                    if args:
-                        query = SearchQuery(text=args)
-                        results = self.query_engine.search(query)
-                        self._display_search_results(results, query)
-                    else:
-                        print("Please provide search terms")
-                elif command == "semantic" and self.use_enhanced:
-                    if args:
-                        self._perform_semantic_search(args)
-                    else:
-                        print("Please provide search terms")
-                elif command == "intent" and self.use_enhanced:
-                    if args:
-                        self._analyze_query_intent(args)
-                    else:
-                        print("Please provide a query")
-                elif command == "suggestions" and self.use_enhanced:
-                    if args:
-                        self._show_semantic_suggestions(args)
-                    else:
-                        print("Please provide a term")
-                elif command == "settings" and self.use_enhanced:
-                    self._show_search_settings()
-                else:
-                    print(f"Unknown command: {command}. Type 'help' for available commands.")
+                
+                # Add to command history
+                if user_input not in command_history:
+                    command_history.append(user_input)
+                    # Keep history limited
+                    if len(command_history) > 100:
+                        command_history.pop(0)
+                
+                # Process the command
+                if not self._process_interactive_command(user_input):
+                    break  # Exit requested
                     
             except KeyboardInterrupt:
                 interrupt_count += 1
@@ -167,8 +131,257 @@ class TerminalInterface:
                 break
                 
             except Exception as e:
-                print(f"Error processing command: {e}")
+                print(f"Unexpected error: {e}")
                 print("Type 'help' for available commands or 'quit' to exit.")
+                # Continue running instead of crashing
+                continue
+    
+    def _show_welcome_message(self):
+        """Display welcome message and available commands"""
+        print("\n" + "="*60)
+        print("[*] Collective Memory Interactive Search")
+        print("="*60)
+        print(f"[*] Data Path: {self.data_path}")
+        print(f"[*]  Database: {self.db_path}")
+        
+        if self.use_enhanced:
+            print("[*] AI-Powered Semantic Search: [+] Enabled")
+        else:
+            print("[*] Basic Search Mode: [!]  Enhanced features disabled")
+        
+        print("\n[*] Available Commands:")
+        print("  help                    - Show detailed help")
+        print("  stats                   - Show database statistics")
+        print("  search <term>           - Search for content")
+        
+        if self.use_enhanced:
+            print("  semantic <term>         - Semantic search with AI scoring")
+            print("  intent <query>          - Analyze query intent")
+            print("  suggestions <term>      - Get semantic suggestions")
+            print("  settings                - Show/modify search settings")
+        
+        print("  quit | exit             - Exit interactive mode")
+        print("  history                 - Show command history")
+        print("\n[!] Tip: Type any command without arguments for usage help")
+        print("="*60 + "\n")
+    
+    def _get_user_input(self, prompt: str) -> str:
+        """Get user input with comprehensive error handling"""
+        try:
+            return input(prompt).strip()
+        except (EOFError, KeyboardInterrupt):
+            # Re-raise these to be handled by the main loop
+            raise
+        except Exception as e:
+            print(f"Input error: {e}")
+            return ""
+    
+    def _process_interactive_command(self, user_input: str) -> bool:
+        """Process interactive command and return False if exit requested"""
+        try:
+            # Validate input
+            if not self._validate_command_input(user_input):
+                return True  # Continue running
+            
+            # Parse command and arguments
+            parts = user_input.split(" ", 1)
+            command = parts[0].lower()
+            args = parts[1] if len(parts) > 1 else ""
+            
+            # Handle exit commands
+            if command in ["quit", "exit", "q"]:
+                print("\n[-] Goodbye!")
+                return False
+            
+            # Handle help command
+            elif command == "help":
+                if args:
+                    self._show_command_help(args.strip())
+                else:
+                    self._show_interactive_help()
+            
+            # Handle stats command
+            elif command == "stats":
+                self._show_statistics()
+            
+            # Handle search command
+            elif command == "search":
+                if args:
+                    self._execute_search_command(args)
+                else:
+                    print("[-] Please provide search terms")
+                    print("[!] Usage: search <your search terms>")
+            
+            # Handle semantic search (enhanced mode only)
+            elif command == "semantic":
+                if not self.use_enhanced:
+                    print("[-] Semantic search not available in basic mode")
+                    print("[!] Install sentence-transformers for enhanced features")
+                elif args:
+                    self._perform_semantic_search(args)
+                else:
+                    print("[-] Please provide search terms")
+                    print("[!] Usage: semantic <your search terms>")
+            
+            # Handle intent analysis (enhanced mode only)
+            elif command == "intent":
+                if not self.use_enhanced:
+                    print("[-] Intent analysis not available in basic mode")
+                elif args:
+                    self._analyze_query_intent(args)
+                else:
+                    print("[-] Please provide a query")
+                    print("[!] Usage: intent <your query>")
+            
+            # Handle suggestions (enhanced mode only)
+            elif command == "suggestions":
+                if not self.use_enhanced:
+                    print("[-] Suggestions not available in basic mode")
+                elif args:
+                    self._show_semantic_suggestions(args)
+                else:
+                    print("[-] Please provide a term")
+                    print("[!] Usage: suggestions <your term>")
+            
+            # Handle settings (enhanced mode only)
+            elif command == "settings":
+                if not self.use_enhanced:
+                    print("[-] Settings not available in basic mode")
+                else:
+                    self._show_search_settings()
+            
+            # Handle history command
+            elif command == "history":
+                print("[*] Command history feature coming soon!")
+            
+            # Handle unknown commands
+            else:
+                self._handle_unknown_command(command)
+            
+            return True  # Continue running
+            
+        except Exception as e:
+            print(f"[-] Error processing command '{user_input}': {e}")
+            print("[!] Type 'help' for available commands")
+            return True  # Continue running despite error
+    
+    def _validate_command_input(self, user_input: str) -> bool:
+        """Validate command input"""
+        if not user_input or not user_input.strip():
+            return False
+        
+        if len(user_input) > 1000:  # Prevent extremely long commands
+            print("[-] Command too long (max 1000 characters)")
+            return False
+        
+        return True
+    
+    def _execute_search_command(self, search_terms: str):
+        """Execute basic search command"""
+        try:
+            query = SearchQuery(text=search_terms)
+            print(f"[*] Searching for: '{search_terms}'")
+            results = self.query_engine.search(query)
+            self._display_search_results(results, query)
+        except Exception as e:
+            print(f"[-] Search failed: {e}")
+            print("[!] Try simplifying your search terms")
+    
+    def _show_interactive_help(self):
+        """Show comprehensive interactive help"""
+        print("\n" + "="*60)
+        print("[*] Collective Memory - Interactive Help")
+        print("="*60)
+        
+        print("\n[*] Basic Search Commands:")
+        print("  search <terms>          - Search for content in files")
+        print("  stats                   - Show database statistics")
+        print("  help [command]          - Show help (optionally for specific command)")
+        
+        if self.use_enhanced:
+            print("\n[*] AI-Enhanced Commands:")
+            print("  semantic <terms>        - AI-powered semantic search")
+            print("  intent <query>          - Analyze what you're looking for")
+            print("  suggestions <term>      - Get related search suggestions")
+            print("  settings                - Configure search behavior")
+        
+        print("\n[*]  System Commands:")
+        print("  history                 - Show recent commands")
+        print("  quit | exit | q         - Exit interactive mode")
+        
+        print("\n[!] Tips:")
+        print("  • Use quotes for exact phrases: search \"exact phrase\"")
+        print("  • Commands are case-insensitive")
+        print("  • Press Ctrl+C three times to force exit")
+        print("  • Type 'help <command>' for detailed command help")
+        
+        if not self.use_enhanced:
+            print("\n[!]  Enhanced Features Disabled:")
+            print("  Install sentence-transformers for AI-powered search")
+        
+        print("="*60)
+    
+    def _show_command_help(self, command: str):
+        """Show help for specific command"""
+        command = command.lower()
+        
+        if command == "search":
+            print("\n[*] Search Command Help:")
+            print("  Usage: search <your search terms>")
+            print("  Description: Search for content across all indexed files")
+            print("  Examples:")
+            print("    search database")
+            print("    search \"user authentication\"")
+            print("    search API documentation")
+        
+        elif command == "semantic" and self.use_enhanced:
+            print("\n[*] Semantic Search Help:")
+            print("  Usage: semantic <your search terms>")
+            print("  Description: AI-powered search that understands meaning")
+            print("  Examples:")
+            print("    semantic how to connect database")
+            print("    semantic user login process")
+            print("    semantic error handling patterns")
+        
+        elif command == "stats":
+            print("\n[*] Statistics Command Help:")
+            print("  Usage: stats")
+            print("  Description: Show database and indexing statistics")
+            print("  Information displayed:")
+            print("    • Total indexed files")
+            print("    • File type distribution")
+            print("    • Recent file activity")
+        
+        elif command in ["quit", "exit"]:
+            print("\n[*] Exit Commands Help:")
+            print("  Usage: quit | exit | q")
+            print("  Description: Exit interactive mode")
+            print("  Alternative: Press Ctrl+C three times")
+        
+        else:
+            print(f"[-] No help available for command: {command}")
+            print("[!] Type 'help' to see all available commands")
+    
+    def _handle_unknown_command(self, command: str):
+        """Handle unknown commands with suggestions"""
+        print(f"[-] Unknown command: '{command}'")
+        
+        # Simple command suggestions
+        suggestions = []
+        available_commands = ["search", "stats", "help", "quit", "exit"]
+        
+        if self.use_enhanced:
+            available_commands.extend(["semantic", "intent", "suggestions", "settings"])
+        
+        # Find similar commands (simple string matching)
+        for cmd in available_commands:
+            if command in cmd or cmd in command:
+                suggestions.append(cmd)
+        
+        if suggestions:
+            print(f"[!] Did you mean: {', '.join(suggestions)}?")
+        else:
+            print("[!] Type 'help' to see all available commands")
 
     def _perform_semantic_search(self, query_text: str):
         """Perform enhanced semantic search"""
@@ -194,6 +407,76 @@ class TerminalInterface:
         # Perform search
         results = self.query_engine.search(query)
         self._display_enhanced_results(results, query)
+
+    def _run_semantic_search_command(self, args):
+        """Execute semantic search from command line arguments"""
+        if not self.use_enhanced:
+            print("[-] Enhanced semantic search is not available.")
+            print("[!] Install sentence-transformers for semantic search capabilities:")
+            print("   pip install sentence-transformers")
+            return
+
+        # Join query arguments
+        query_text = " ".join(args.query)
+        
+        if not query_text.strip():
+            print("[-] Please provide search terms")
+            print("[!] Usage: semantic <your search terms>")
+            return
+
+        print(f"[*] Performing semantic search for: '{query_text}'")
+        
+        try:
+            # Create enhanced query with command line options
+            query = EnhancedSearchQuery(
+                text=query_text,
+                use_semantic_search=True,
+                use_ai_scoring=not args.no_ai_scoring,
+                extract_entities=not args.no_entities,
+                semantic_similarity_threshold=args.threshold,
+            )
+            
+            # Apply filters
+            if args.type:
+                # Add file type filter
+                query.file_types = [f".{args.type.lstrip('.')}"]
+                
+            if args.days:
+                # Add date filter
+                query.date_from = datetime.now(timezone.utc) - timedelta(days=args.days)
+            
+            # Set sorting and limit
+            query.sort_by = args.sort
+            query.limit = args.limit
+            
+            # Show configuration
+            print(f"[*] Configuration:")
+            print(f"   • AI Scoring: {'[+] Enabled' if not args.no_ai_scoring else '[-] Disabled'}")
+            print(f"   • Entity Extraction: {'[+] Enabled' if not args.no_entities else '[-] Disabled'}")
+            print(f"   • Similarity Threshold: {args.threshold}")
+            print(f"   • Sort By: {args.sort}")
+            print(f"   • Max Results: {args.limit}")
+            
+            if args.type:
+                print(f"   • File Type Filter: {args.type}")
+            if args.days:
+                print(f"   • Date Filter: Last {args.days} days")
+            
+            # Analyze intent first
+            if not args.no_ai_scoring:
+                intent = self.query_engine.analyze_query_intent(query_text)
+                print(f"[*] Detected Intent: {intent}")
+            
+            # Perform search
+            print("[*] Searching...")
+            results = self.query_engine.search(query)
+            
+            # Display results
+            self._display_enhanced_results(results, query)
+            
+        except Exception as e:
+            print(f"[-] Semantic search failed: {e}")
+            print("[!] Try using basic search instead: search <your terms>")
 
     def _analyze_query_intent(self, query_text: str):
         """Analyze and display query intent"""
@@ -811,6 +1094,9 @@ Examples:
             results = self.query_engine.search(query)
             self._display_search_results(results, query)
 
+        elif args.command == "semantic":
+            self._run_semantic_search_command(args)
+
         elif args.command == "index":
             self._reindex_all_files()
 
@@ -883,15 +1169,15 @@ Examples:
 
                     # Chat type icons
                     type_icons = {
-                        "conversation": "💬",
-                        "code_generation": "💻",
-                        "inline_chat": "📝",
-                        "message_array": "📋",
-                        "raw_content": "📄",
-                        "raw_string": "📜",
+                        "conversation": "[C]",
+                        "code_generation": "[G]",
+                        "inline_chat": "[I]",
+                        "message_array": "[M]",
+                        "raw_content": "[R]",
+                        "raw_string": "[S]",
                     }
 
-                    icon = type_icons.get(chat_type, "❓")
+                    icon = type_icons.get(chat_type, "[?]")
 
                     print(f"\n{i:2d}. {icon} [{chat_type}] - {key_type}")
                     print(f"     ID: {chat.get('id', 'N/A')}")
@@ -950,7 +1236,7 @@ def main():
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
     # Search command
-    search_parser = subparsers.add_parser("search", help="Search files")
+    search_parser = subparparsers.add_parser("search", help="Search files")
     search_parser.add_argument("text", nargs="?", help="Search text")
     search_parser.add_argument("-k", "--keywords", help="Keywords (comma-separated)")
     search_parser.add_argument(
@@ -967,6 +1253,35 @@ def main():
         help="Sort by",
     )
     search_parser.add_argument("--limit", type=int, default=20, help="Result limit")
+
+    # Semantic search command (enhanced mode)
+    semantic_parser = subparsers.add_parser("semantic", help="Semantic search with AI scoring")
+    semantic_parser.add_argument("query", nargs="+", help="Search query text")
+    semantic_parser.add_argument(
+        "--type", "-t", help="Filter by file type (e.g., md, py)"
+    )
+    semantic_parser.add_argument(
+        "--days", "-d", type=int, help="Filter by days (e.g., 7 for last week)"
+    )
+    semantic_parser.add_argument(
+        "--limit", "-l", type=int, default=10, help="Limit results (default: 10)"
+    )
+    semantic_parser.add_argument(
+        "--sort", "-s", choices=["relevance", "date", "size"],
+        default="relevance", help="Sort results by (default: relevance)"
+    )
+    semantic_parser.add_argument(
+        "--threshold", type=float, default=0.6, 
+        help="Semantic similarity threshold (0.0-1.0, default: 0.6)"
+    )
+    semantic_parser.add_argument(
+        "--no-ai-scoring", action="store_true", 
+        help="Disable AI scoring (faster but less accurate)"
+    )
+    semantic_parser.add_argument(
+        "--no-entities", action="store_true", 
+        help="Disable entity extraction"
+    )
 
     # Other commands
     subparsers.add_parser("index", help="Reindex all files")

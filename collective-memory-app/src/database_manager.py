@@ -217,7 +217,7 @@ class DatabaseManager:
             self.connection.row_factory = sqlite3.Row  # Dict-like access
 
             print(
-                f"{Fore.GREEN}✅ Database connected: {Fore.YELLOW}{self.db_path}{Style.RESET_ALL}"
+                f"{Fore.GREEN}[+] Database connected: {Fore.YELLOW}{self.db_path}{Style.RESET_ALL}"
             )
             return True
 
@@ -230,7 +230,7 @@ class DatabaseManager:
         if self.connection:
             self.connection.close()
             self.connection = None
-            print(f"{Fore.YELLOW}📴 Database disconnected{Style.RESET_ALL}")
+            print(f"{Fore.YELLOW}[-] Database disconnected{Style.RESET_ALL}")
 
     def initialize_database(self) -> bool:
         """Veritabanı tablolarını oluşturur"""
@@ -245,7 +245,7 @@ class DatabaseManager:
             for table_name, schema in self.schema.items():
                 cursor.execute(schema)
                 print(
-                    f"{Fore.CYAN}📋 Table created/verified: {table_name}{Style.RESET_ALL}"
+                    f"{Fore.CYAN}[*] Table created/verified: {table_name}{Style.RESET_ALL}"
                 )
 
             # İndeksleri oluştur
@@ -261,7 +261,7 @@ class DatabaseManager:
                 cursor.execute(index)
 
             self.connection.commit()
-            print(f"{Fore.GREEN}✅ Database initialized successfully{Style.RESET_ALL}")
+            print(f"{Fore.GREEN}[+] Database initialized successfully{Style.RESET_ALL}")
             return True
 
         except sqlite3.Error as e:
@@ -391,9 +391,7 @@ class DatabaseManager:
                     file_id, "created", None, file_info["content_hash"]
                 )
 
-                print(
-                    f"{Fore.GREEN}✅ File added: {file_info['file_name']}{Style.RESET_ALL}"
-                )
+                print(                    f"{Fore.GREEN}[+] File added: {file_info['file_name']}{Style.RESET_ALL}"                )
 
                 self.connection.commit()
                 return file_id

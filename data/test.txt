@@ -1,0 +1,2 @@
+This is a test file for the Collective Memory project.
+It contains keywords like Context7, enterprise, and semantic search.
